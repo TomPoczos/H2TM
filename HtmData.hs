@@ -44,12 +44,10 @@ data Column = Column { cells          :: [Cell]
                      }
 
 data DistalSynapse = DistalSynapse { dInput        :: Input
-                                   , dOwner        :: Column
                                    , dSynapseState :: SynapseState
                                    , dPermanence   :: Permanence
                                    }
 data ProximalSynapse = ProximalSynapse { pInput        :: Input
-                                       , pOwner        :: Cell
                                        , pSynapseState :: SynapseState
                                        , pPermanence   :: Permanence
                                        }
@@ -64,12 +62,12 @@ data Region = Region { columns               :: [Column]
                      }
 
 instance Eq DistalSynapse where
- DistalSynapse a1 a2 a3 a4 == DistalSynapse b1 b2 b3 b4 =
-     (a1 == b1) && (a2 == b2) && (a3 == b3) && (abs (a4 - b4) <= 0.001)
+ DistalSynapse a1 a2 a3 == DistalSynapse b1 b2 b3 =
+     (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001)
 
 instance Eq ProximalSynapse where
- ProximalSynapse a1 a2 a3 a4 == ProximalSynapse b1 b2 b3 b4 =
-     (a1 == b1) && (a2 == b2) && (a3 == b3) && (abs (a4 - b4) <= 0.001)
+ ProximalSynapse a1 a2 a3 == ProximalSynapse b1 b2 b3 =
+     (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001)
 
 instance Eq Input where
  On == On = True
