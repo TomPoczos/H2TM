@@ -21,7 +21,7 @@ overlap column minOverlap
           -- The number of distal synapses with that ar active AND connected to the column
 
           rawOverlap :: Htm.Overlap
-          rawOverlap = fromInteger (sum $ map (oneOnInput . Htm.dInput) $ connectedDistalSynapses ) :: Double
+          rawOverlap = fromInteger $ sum $ map (oneOnInput . Htm.dInput) connectedDistalSynapses :: Double
 
           -- The number of ALL distal synapses connected to the column
 
