@@ -75,7 +75,35 @@ inhibition region column = filter isWinner neighbours
           -- Returns the index of column converted from Int to Integer
           -- Returns Nothing if the column is not in the list
 
-          indexOfColumn :: Htm.Column ->Maybe Integer
+          indexOfColumn :: Htm.Column -> Maybe Integer
           indexOfColumn c = case elemIndex c $ Htm.columns region of
               Nothing -> Nothing
               Just index -> Just (toInteger index)
+
+-- PHASE 3.1: LEARNING
+-- returns a modified column with the permanence of each of its distal syanpses updated
+
+adjustPermanences :: Htm.Region -> Htm.Column -> Htm.Column
+adjustPermanences region activeColumn = Htm.Column (Htm.cells activeColumn) (modifySynapses $ Htm.distalSynapses activeColumn) (Htm.boost activeColumn) (Htm.key activeColumn)
+    where
+          -- changes permanence for all synapses in list base on their state
+
+          modifySynapses :: [Htm.DistalSynapse] -> [Htm.DistalSynapse]
+          modifySynapses synapses = map changePermanence synapses
+
+          -- changes the value of a synapse based on its state
+
+          changePermanence :: Htm.DistalSynapse -> Htm.DistalSynapse
+          changePermanence synapse
+            | Htm.dSynapseState synapse == Htm.Actual = Htm.DistalSynapse (Htm.dInput synapse) (Htm.dSynapseState synapse) (increasePermanence $ Htm.dPermanence synapse)
+            | Htm.dSynapseState synapse == Htm.Potential = Htm.DistalSynapse (Htm.dInput synapse) (Htm.dSynapseState synapse) (decreasePermanence $ Htm.dPermanence synapse)
+
+          -- increases permanence based on the region's permanenceInc value
+
+          increasePermanence :: Htm.Permanence -> Htm.Permanence
+          increasePermanence permanence = min 1.0 $ permanence + Htm.permanenceInc region
+
+          -- decreases permanence based on the region's permanenceDec value
+
+          decreasePermanence :: Htm.Permanence -> Htm.Permanence
+          decreasePermanence permanence = max 0.0 $ permanence - Htm.permanenceDec region
