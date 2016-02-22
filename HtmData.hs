@@ -59,6 +59,8 @@ data Region = Region { columns               :: [Column]
                      , desiredLocalActivity  :: LocalActivity
                      , inhibitionRadius      :: InhibitionRadius
                      , minimumOverlap        :: Overlap
+                     , permanenceInc         :: Permanence
+                     , permanenceDec         :: Permanence
                      }
 
 instance Eq DistalSynapse where
