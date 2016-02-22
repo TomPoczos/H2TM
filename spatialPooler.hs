@@ -48,37 +48,12 @@ overlap column minOverlap
 -- whose overlap is larger than 0 and larger than the desired local activity
 
 inhibition :: Htm.Region -> Htm.Column -> [Htm.Column]
-inhibition region column = filter isWinner neighbours
+inhibition region column = filter isWinner $ neighbours region column
     where
           -- Determines whether the column's overlap is larger than 0 and larger than the desired local activity
 
           isWinner :: Htm.Column -> Bool
           isWinner c = overlap c (Htm.minimumOverlap region) > 0.0 && overlap c (Htm.minimumOverlap region) >= (fromInteger $ Htm.desiredLocalActivity region :: Double)
-
-          -- The list of columns that are within the inhibition radius of the column in question
-
-          neighbours :: [Htm.Column]
-          neighbours = filter withinInhibitionRadius $ Htm.columns region
-
-          -- Determines whether the column is within the inhibition radius of the column in question
-
-          withinInhibitionRadius :: Htm.Column -> Bool
-          withinInhibitionRadius potentialNeighbor
-              | isNothing $ indexOfColumn column = False
-              | isNothing $ indexOfColumn potentialNeighbor = False
-              | potentialNeighbor == column = False
-              -- FromJust can be used here safely as we already now that
-              -- "indexOfColumn column" returns "Just Integer"
-              | abs  (fromJust (indexOfColumn column) - fromJust (indexOfColumn potentialNeighbor)) <= Htm.inhibitionRadius region = True
-              | otherwise = False
-
-          -- Returns the index of column converted from Int to Integer
-          -- Returns Nothing if the column is not in the list
-
-          indexOfColumn :: Htm.Column -> Maybe Integer
-          indexOfColumn c = case elemIndex c $ Htm.columns region of
-              Nothing -> Nothing
-              Just index -> Just (toInteger index)
 
 -- PHASE 3.1: LEARNING
 -- returns a modified column with the permanence of each of its distal syanpses updated
@@ -107,3 +82,29 @@ adjustPermanences region activeColumn = Htm.Column (Htm.cells activeColumn) (mod
 
           decreasePermanence :: Htm.Permanence -> Htm.Permanence
           decreasePermanence permanence = max 0.0 $ permanence - Htm.permanenceDec region
+
+-- The list of columns that are within the inhibition radius of the column in question
+-- Top level function as it is used during multiple phases
+
+neighbours :: Htm.Region -> Htm.Column -> [Htm.Column]
+neighbours region column= filter withinInhibitionRadius $ Htm.columns region
+    where
+          -- Determines whether the column is within the inhibition radius of the column in question
+
+          withinInhibitionRadius :: Htm.Column -> Bool
+          withinInhibitionRadius potentialNeighbor
+              | isNothing $ indexOfColumn column = False
+              | isNothing $ indexOfColumn potentialNeighbor = False
+              | potentialNeighbor == column = False
+              -- FromJust can be used here safely as we already now that
+              -- "indexOfColumn column" returns "Just Integer"
+              | abs  (fromJust (indexOfColumn column) - fromJust (indexOfColumn potentialNeighbor)) <= Htm.inhibitionRadius region = True
+              | otherwise = False
+
+          -- Returns the index of column converted from Int to Integer
+          -- Returns Nothing if the column is not in the list
+
+          indexOfColumn :: Htm.Column -> Maybe Integer
+          indexOfColumn c = case elemIndex c $ Htm.columns region of
+              Nothing -> Nothing
+              Just index -> Just (toInteger index)
