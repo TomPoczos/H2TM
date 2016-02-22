@@ -81,9 +81,14 @@ instance Eq Column where
      (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001) && (a4 == b4)
 
 instance Eq Region where
- Region a1 a2 a3 a4 a5 == Region b1 b2 b3 b4 b5 =
-     (a1 == b1) && (a2 == b2) && (a3 == b3) && (a4 == b4) && (abs (a5 - b5) <= 0.001)
-
+ Region a1 a2 a3 a4 a5 a6 a7 == Region b1 b2 b3 b4 b5 b6 b7 =
+     (a1 == b1)
+     && (a2 == b2)
+     && (a3 == b3)
+     && (a4 == b4)
+     && (abs (a5 - b5) <= 0.001)
+     && (abs (a6 - b6) <= 0.001)
+     && (abs (a7 - b7) <= 0.001)
 
 instance Eq Cell where
  Cell a1 a2 == Cell b1 b2 = (a1 == b1) && (a2 == b2)
