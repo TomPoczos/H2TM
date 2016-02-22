@@ -1,7 +1,11 @@
 module SpatialPooler
 ( overlap
-, inhibitionPhase
+, inhibition
 ) where
+
+-- The functions exposed by this module representing the phases of spatial pooling
+-- work on a per column basis. The spatialPooler function utilizes these
+-- on a per region basis.
 
 import           Data.List
 import           Data.Maybe
@@ -43,13 +47,13 @@ overlap column minOverlap
 -- The list of columns within the inhibition radius of the column in question
 -- whose overlap is larger than 0 and larger than the desired local activity
 
-inhibitionPhase :: Htm.Region -> Htm.Column -> [Htm.Column]
-inhibitionPhase region column = filter winners neighbours
+inhibition :: Htm.Region -> Htm.Column -> [Htm.Column]
+inhibition region column = filter isWinner neighbours
     where
           -- Determines whether the column's overlap is larger than 0 and larger than the desired local activity
 
-          winners :: Htm.Column -> Bool
-          winners c = overlap c (Htm.minimumOverlap region) > 0.0 && overlap c (Htm.minimumOverlap region) >= (fromInteger $ Htm.desiredLocalActivity region :: Double)
+          isWinner :: Htm.Column -> Bool
+          isWinner c = overlap c (Htm.minimumOverlap region) > 0.0 && overlap c (Htm.minimumOverlap region) >= (fromInteger $ Htm.desiredLocalActivity region :: Double)
 
           -- The list of columns that are within the inhibition radius of the column in question
 
