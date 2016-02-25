@@ -108,7 +108,7 @@ adjustBoost region column = Htm.Column (Htm.cells column) (Htm.distalSynapses co
           --------------------------------------------------------------------------------------------------------------------
 
           activeDutyCycle :: Htm.Column -> Double
-          activeDutyCycle c = sum (Htm.values $ Htm.pastCycles c) / (fromInteger $ Htm.numOfVals $ Htm.pastCycles c :: Double)
+          activeDutyCycle c = (fromInteger $ sum (Htm.values $ Htm.pastCycles c) :: Double) / (fromInteger $ Htm.numOfVals $ Htm.pastCycles c :: Double)
 
 
 

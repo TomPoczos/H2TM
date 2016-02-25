@@ -63,27 +63,14 @@ data Region           = Region           { columns               :: [Column]
                                          , boostInc              :: Double
                                          }
 
-data DutyCycleHistory = DutyCycleHistory { values                :: [Double]
+data DutyCycleHistory = DutyCycleHistory { values                :: [Integer]
                                          , numOfVals             :: Integer
                                          , maxAmount             :: Integer
                                          }
 
 instance Eq DutyCycleHistory where
     DutyCycleHistory a1 a2 a3 == DutyCycleHistory b1 b2 b3 =
-        valuesEqual True a1 b1 && a2 == b2 && a3 == b3
-        where
-
-              -- checks if all values in the lists are the same
-              -- (have difference smaller than 0.001)
-              -- returns false if lists not of the same length
-
-              valuesEqual :: Bool -> [Double] -> [Double] -> Bool
-              valuesEqual a []     []    = a
-              valuesEqual _ (_:_)  []    = False
-              valuesEqual _ []     (_:_) = False
-              valuesEqual equalSoFar (x:xs) (y:ys)
-                  | not equalSoFar = False
-                  | equalSoFar = valuesEqual (abs (x - y) <= 0.001) xs ys
+        a1 == b1 && a2 == b2 && a3 == b3
 
 instance Eq DistalSynapse where
  DistalSynapse a1 a2 a3 == DistalSynapse b1 b2 b3 =
