@@ -1,12 +1,13 @@
 module HtmData
-( CellState (..)
-, SynapseState (..)
-, Cell (..)
-, DistalSynapse (..)
-, ProximalSynapse (..)
-, Input  (..)
-, Column (..)
-, Region (..)
+( CellState        (..)
+, SynapseState     (..)
+, Cell             (..)
+, DistalSynapse    (..)
+, ProximalSynapse  (..)
+, Input            (..)
+, Column           (..)
+, Region           (..)
+, DutyCycleHistory (..)
 , Permanence
 , Boost
 , LocalActivity
@@ -14,52 +15,75 @@ module HtmData
 , Overlap
 ) where
 
-type Permanence = Double
+type Permanence       = Double
 
-type Boost = Double
+type Boost            = Double
 
-type LocalActivity = Integer
+type LocalActivity    = Integer
 
 type InhibitionRadius = Integer
 
-type Overlap = Double
+type Overlap          = Double
 
-data CellState = Active
-               | Predictive
-               | Inactive
+data CellState        = Active | Predictive | Inactive
 
-data SynapseState = Potential
-                  | Actual
+data SynapseState     = Potential | Actual
 
-data Input = On | Off
+data Input            = On | Off
 
-data Cell = Cell { cellState        :: CellState
-                 , proximalSynapses :: [ProximalSynapse]
-                 }
+data Cell             = Cell             { cellState             :: CellState
+                                         , proximalSynapses      :: [ProximalSynapse]
+                                         }
 
-data Column = Column { cells          :: [Cell]
-                     , distalSynapses :: [DistalSynapse]
-                     , boost          :: Double
-                     , key            :: Integer
-                     }
+data Column           = Column           { cells                 :: [Cell]
+                                         , distalSynapses        :: [DistalSynapse]
+                                         , boost                 :: Double
+                                         , key                   :: Integer
+                                         , pastCycles            :: DutyCycleHistory
+                                         , pastOverlapCycles     :: DutyCycleHistory
+                                         }
 
-data DistalSynapse = DistalSynapse { dInput        :: Input
-                                   , dSynapseState :: SynapseState
-                                   , dPermanence   :: Permanence
-                                   }
-data ProximalSynapse = ProximalSynapse { pInput        :: Input
-                                       , pSynapseState :: SynapseState
-                                       , pPermanence   :: Permanence
-                                       }
+data DistalSynapse    = DistalSynapse    { dInput                :: Input
+                                         , dSynapseState         :: SynapseState
+                                         , dPermanence           :: Permanence
+                                         }
 
-data Region = Region { columns               :: [Column]
-                     , previouslyActiveCells :: [Cell]
-                     , desiredLocalActivity  :: LocalActivity
-                     , inhibitionRadius      :: InhibitionRadius
-                     , minimumOverlap        :: Overlap
-                     , permanenceInc         :: Permanence
-                     , permanenceDec         :: Permanence
-                     }
+data ProximalSynapse  = ProximalSynapse  { pInput                :: Input
+                                         , pSynapseState         :: SynapseState
+                                         , pPermanence           :: Permanence
+                                         }
+
+data Region           = Region           { columns               :: [Column]
+                                         , previouslyActiveCells :: [Cell]
+                                         , desiredLocalActivity  :: LocalActivity
+                                         , inhibitionRadius      :: InhibitionRadius
+                                         , minimumOverlap        :: Overlap
+                                         , permanenceInc         :: Permanence
+                                         , permanenceDec         :: Permanence
+                                         , boostInc              :: Double
+                                         }
+
+data DutyCycleHistory = DutyCycleHistory { values                :: [Double]
+                                         , numOfVals             :: Integer
+                                         , maxAmount             :: Integer
+                                         }
+
+instance Eq DutyCycleHistory where
+    DutyCycleHistory a1 a2 a3 == DutyCycleHistory b1 b2 b3 =
+        valuesEqual True a1 b1 && a2 == b2 && a3 == b3
+        where
+
+              -- checks if all values in the lists are the same
+              -- (have difference smaller than 0.001)
+              -- returns false if lists not of the same length
+
+              valuesEqual :: Bool -> [Double] -> [Double] -> Bool
+              valuesEqual a []     []    = a
+              valuesEqual _ (_:_)  []    = False
+              valuesEqual _ []     (_:_) = False
+              valuesEqual equalSoFar (x:xs) (y:ys)
+                  | not equalSoFar = False
+                  | equalSoFar = valuesEqual (abs (x - y) <= 0.001) xs ys
 
 instance Eq DistalSynapse where
  DistalSynapse a1 a2 a3 == DistalSynapse b1 b2 b3 =
@@ -75,11 +99,16 @@ instance Eq Input where
  _ == _ = False
 
 instance Eq Column where
- Column a1 a2 a3 a4 == Column b1 b2 b3 b4 =
-     (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001) && (a4 == b4)
+ Column a1 a2 a3 a4 a5 a6 == Column b1 b2 b3 b4 b5 b6 =
+     (a1 == b1)
+     && (a2 == b2)
+     && (abs (a3 - b3) <= 0.001)
+     && (a4 == b4)
+     && (a5 == b5)
+     && (a6 == b6)
 
 instance Eq Region where
- Region a1 a2 a3 a4 a5 a6 a7 == Region b1 b2 b3 b4 b5 b6 b7 =
+ Region a1 a2 a3 a4 a5 a6 a7 a8 == Region b1 b2 b3 b4 b5 b6 b7 b8 =
      (a1 == b1)
      && (a2 == b2)
      && (a3 == b3)
@@ -87,6 +116,7 @@ instance Eq Region where
      && (abs (a5 - b5) <= 0.001)
      && (abs (a6 - b6) <= 0.001)
      && (abs (a7 - b7) <= 0.001)
+     && (abs (a8 - b8) <= 0.001)
 
 instance Eq Cell where
  Cell a1 a2 == Cell b1 b2 = (a1 == b1) && (a2 == b2)
