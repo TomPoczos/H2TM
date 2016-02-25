@@ -19,7 +19,7 @@ import qualified HtmData    as Htm
 overlap :: Htm.Column -> Htm.Overlap -> Htm.Overlap
 overlap column minOverlap
     | rawOverlap < minOverlap = 0
-    | otherwise =  rawOverlap * Htm.boost column
+    | otherwise               =  rawOverlap * Htm.boost column
 
     where
           -- The number of distal synapses with that ar active AND connected to the column
@@ -59,18 +59,19 @@ inhibition region column = filter isWinner $ neighbours region column
 -- returns a modified column with the permanence of each of its distal syanpses updated
 
 adjustPermanences :: Htm.Region -> Htm.Column -> Htm.Column
-adjustPermanences region activeColumn = Htm.Column (Htm.cells activeColumn) (modifySynapses $ Htm.distalSynapses activeColumn) (Htm.boost activeColumn) (Htm.key activeColumn)
+adjustPermanences region activeColumn =
+    Htm.Column (Htm.cells activeColumn) (modifySynapses $ Htm.distalSynapses activeColumn) (Htm.boost activeColumn) (Htm.key activeColumn) (Htm.pastCycles activeColumn) (Htm.pastOverlapCycles activeColumn)
     where
           -- changes permanence for all synapses in list base on their state
 
           modifySynapses :: [Htm.DistalSynapse] -> [Htm.DistalSynapse]
-          modifySynapses synapses = map changePermanence synapses
+          modifySynapses = map changePermanence
 
           -- changes the value of a synapse based on its state
 
           changePermanence :: Htm.DistalSynapse -> Htm.DistalSynapse
           changePermanence synapse
-            | Htm.dSynapseState synapse == Htm.Actual = Htm.DistalSynapse (Htm.dInput synapse) (Htm.dSynapseState synapse) (increasePermanence $ Htm.dPermanence synapse)
+            | Htm.dSynapseState synapse == Htm.Actual    = Htm.DistalSynapse (Htm.dInput synapse) (Htm.dSynapseState synapse) (increasePermanence $ Htm.dPermanence synapse)
             | Htm.dSynapseState synapse == Htm.Potential = Htm.DistalSynapse (Htm.dInput synapse) (Htm.dSynapseState synapse) (decreasePermanence $ Htm.dPermanence synapse)
 
           -- increases permanence based on the region's permanenceInc value
@@ -83,6 +84,34 @@ adjustPermanences region activeColumn = Htm.Column (Htm.cells activeColumn) (mod
           decreasePermanence :: Htm.Permanence -> Htm.Permanence
           decreasePermanence permanence = max 0.0 $ permanence - Htm.permanenceDec region
 
+-- returns the column passed to it with its boost value updated
+
+adjustBoost :: Htm.Region -> Htm.Column -> Htm.Column
+adjustBoost region column = Htm.Column (Htm.cells column) (Htm.distalSynapses column) updateBoost (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
+    where
+          -- 1% of the highest DutyCycle of the column's neighbours' duty cycles
+
+          updateBoost :: Double
+          updateBoost
+            | activeDutyCycle column > minDutyCycle = 1
+            | otherwise                             = Htm.boost column + Htm.boostInc region
+
+          -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
+          -- otherwise the column's current boost is increased by a value specified
+          -- on per region basis
+
+          minDutyCycle :: Double
+          minDutyCycle = 0.01 * foldr (max . activeDutyCycle) 0.0 (neighbours region column)
+
+          --------------------------------------------------------------------------------------------------------------------
+          -- Need to ask about this average vs. sum thing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          --------------------------------------------------------------------------------------------------------------------
+
+          activeDutyCycle :: Htm.Column -> Double
+          activeDutyCycle c = sum (Htm.values $ Htm.pastCycles c) / (fromInteger $ Htm.numOfVals $ Htm.pastCycles c :: Double)
+
+
+
 -- The list of columns that are within the inhibition radius of the column in question
 -- Top level function as it is used during multiple phases
 
@@ -93,9 +122,9 @@ neighbours region column= filter withinInhibitionRadius $ Htm.columns region
 
           withinInhibitionRadius :: Htm.Column -> Bool
           withinInhibitionRadius potentialNeighbor
-              | isNothing $ indexOfColumn column = False
+              | isNothing $ indexOfColumn column            = False
               | isNothing $ indexOfColumn potentialNeighbor = False
-              | potentialNeighbor == column = False
+              | potentialNeighbor == column                 = False
               -- FromJust can be used here safely as we already now that
               -- "indexOfColumn column" returns "Just Integer"
               | abs  (fromJust (indexOfColumn column) - fromJust (indexOfColumn potentialNeighbor)) <= Htm.inhibitionRadius region = True
