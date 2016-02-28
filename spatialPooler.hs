@@ -3,10 +3,6 @@ module SpatialPooler
 , inhibition
 ) where
 
--- The functions exposed by this module representing the phases of spatial pooling
--- work on a per column basis. The spatialPooler function utilizes these
--- on a per region basis.
-
 import           Data.List
 import           Data.Maybe
 import qualified HtmData    as Htm
@@ -84,32 +80,34 @@ adjustPermanences region activeColumn =
           decreasePermanence :: Htm.Permanence -> Htm.Permanence
           decreasePermanence permanence = max 0.0 $ permanence - Htm.permanenceDec region
 
+-- PHASE 3.2: LEARNING
 -- returns the column passed to it with its boost value updated
 
-adjustBoost :: Htm.Region -> Htm.Column -> Htm.Column
-adjustBoost region column = Htm.Column (Htm.cells column) (Htm.distalSynapses column) updateBoost (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
+boostColumn :: Htm.Region -> Htm.Column -> Htm.Column
+boostColumn region column = Htm.Column (Htm.cells column) (Htm.distalSynapses column) updateBoost (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
     where
-          -- 1% of the highest DutyCycle of the column's neighbours' duty cycles
+
+          -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
+          -- otherwise the column's current boost is increased by a value specified
+          -- on per region basis
 
           updateBoost :: Double
           updateBoost
             | activeDutyCycle column > minDutyCycle = 1
             | otherwise                             = Htm.boost column + Htm.boostInc region
 
-          -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
-          -- otherwise the column's current boost is increased by a value specified
-          -- on per region basis
+          -- 1% of the highest DutyCycle of the column's neighbours' duty cycles
 
           minDutyCycle :: Double
           minDutyCycle = 0.01 * foldr (max . activeDutyCycle) 0.0 (neighbours region column)
 
-          --------------------------------------------------------------------------------------------------------------------
-          -- Need to ask about this average vs. sum thing !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          --------------------------------------------------------------------------------------------------------------------
-
           activeDutyCycle :: Htm.Column -> Double
           activeDutyCycle c = (fromInteger $ sum (Htm.values $ Htm.pastCycles c) :: Double) / (fromInteger $ Htm.numOfVals $ Htm.pastCycles c :: Double)
 
+boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
+boostPermanences region column = Htm.Column (Htm.cells column) increasePermanences (Htm.boost column) (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
+    where increasePermanences :: [Htm.DistalSynapse]
+          increasePermanences =
 
 
 -- The list of columns that are within the inhibition radius of the column in question
