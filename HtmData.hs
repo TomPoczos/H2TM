@@ -32,11 +32,11 @@ data SynapseState     = Potential | Actual
 data Input            = On | Off
 
 data Cell             = Cell             { cellState             :: CellState
-                                         , proximalSynapses      :: [ProximalSynapse]
+                                         , distalSynapses        :: [DistalSynapse]
                                          }
 
 data Column           = Column           { cells                 :: [Cell]
-                                         , distalSynapses        :: [DistalSynapse]
+                                         , proximalSynapses      :: [ProximalSynapse]
                                          , boost                 :: Double
                                          , key                   :: Integer
                                          , pastCycles            :: DutyCycleHistory
