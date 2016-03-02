@@ -60,12 +60,12 @@ inhibition region column = filter isWinner $ neighbours region column
 
 adjustPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 adjustPermanences region activeColumn =
-    Htm.Column (Htm.cells activeColumn)
+    Htm.Column (Htm.cells                             activeColumn)
                (modifySynapses $ Htm.proximalSynapses activeColumn)
-               (Htm.boost activeColumn)
-               (Htm.key activeColumn)
-               (Htm.pastCycles activeColumn)
-               (Htm.pastOverlapCycles activeColumn)
+               (Htm.boost                             activeColumn)
+               (Htm.key                               activeColumn)
+               (Htm.pastCycles                        activeColumn)
+               (Htm.pastOverlapCycles                 activeColumn)
     where
           -- changes permanence for all synapses in list base on their state
 
@@ -77,12 +77,12 @@ adjustPermanences region activeColumn =
           changePermanence :: Htm.ProximalSynapse -> Htm.ProximalSynapse
           changePermanence synapse
             | Htm.pSynapseState synapse ==
-                Htm.Actual    = Htm.ProximalSynapse (Htm.pInput synapse)
-                                                    (Htm.pSynapseState synapse)
+                Htm.Actual    = Htm.ProximalSynapse (Htm.pInput                           synapse)
+                                                    (Htm.pSynapseState                    synapse)
                                                     (increasePermanence $ Htm.pPermanence synapse)
             | Htm.pSynapseState synapse ==
-                Htm.Potential = Htm.ProximalSynapse (Htm.pInput synapse)
-                                                    (Htm.pSynapseState synapse)
+                Htm.Potential = Htm.ProximalSynapse (Htm.pInput                           synapse)
+                                                    (Htm.pSynapseState                    synapse)
                                                     (decreasePermanence $ Htm.pPermanence synapse)
 
           -- increases permanence based on the region's permanenceInc value
@@ -99,11 +99,11 @@ adjustPermanences region activeColumn =
 -- returns the column passed to it with its boost value updated
 
 boostColumn :: Htm.Region -> Htm.Column -> Htm.Column
-boostColumn region column = Htm.Column (Htm.cells column)
-                                       (Htm.proximalSynapses column)
+boostColumn region column = Htm.Column (Htm.cells             column)
+                                       (Htm.proximalSynapses  column)
                                        updateBoost
-                                       (Htm.key column)
-                                       (Htm.pastCycles column)
+                                       (Htm.key               column)
+                                       (Htm.pastCycles        column)
                                        (Htm.pastOverlapCycles column)
     where
 
