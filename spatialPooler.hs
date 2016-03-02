@@ -43,6 +43,9 @@ overlap column minOverlap
 -- The list of columns within the inhibition radius of the column in question
 -- whose overlap is larger than 0 and larger than the desired local activity
 
+activeColumns :: Htm.Region -> [Htm.Column]
+activeColumns region = nub $ concat $ map (inhibition region) $ Htm.columns region
+
 inhibition :: Htm.Region -> Htm.Column -> [Htm.Column]
 inhibition region column = filter isWinner $ neighbours region column
     where
