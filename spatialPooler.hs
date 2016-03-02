@@ -21,12 +21,12 @@ overlap column minOverlap
           -- The number of distal synapses with that ar active AND connected to the column
 
           rawOverlap :: Htm.Overlap
-          rawOverlap = fromInteger $ sum $ map (oneOnInput . Htm.dInput) connectedDistalSynapses :: Double
+          rawOverlap = fromInteger $ sum $ map (oneOnInput . Htm.pInput) connectedProximalSynapses :: Double
 
           -- The number of ALL distal synapses connected to the column
 
-          connectedDistalSynapses :: [Htm.DistalSynapse]
-          connectedDistalSynapses = filter connected $ Htm.distalSynapses column
+          connectedProximalSynapses :: [Htm.ProximalSynapse]
+          connectedProximalSynapses = filter connected $ Htm.proximalSynapses column
 
           -- Converts SynapseState to 0 or 1
 
@@ -36,8 +36,8 @@ overlap column minOverlap
 
           -- Determines whether a synapse is currently connected / Active
 
-          connected :: Htm.DistalSynapse -> Bool
-          connected synapse = Htm.dSynapseState synapse == Htm.Actual
+          connected :: Htm.ProximalSynapse -> Bool
+          connected synapse = Htm.pSynapseState synapse == Htm.Actual
 
 -- PHASE 2: INHIBITION
 -- The list of columns within the inhibition radius of the column in question
@@ -56,19 +56,19 @@ inhibition region column = filter isWinner $ neighbours region column
 
 adjustPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 adjustPermanences region activeColumn =
-    Htm.Column (Htm.cells activeColumn) (modifySynapses $ Htm.distalSynapses activeColumn) (Htm.boost activeColumn) (Htm.key activeColumn) (Htm.pastCycles activeColumn) (Htm.pastOverlapCycles activeColumn)
+    Htm.Column (Htm.cells activeColumn) (modifySynapses $ Htm.proximalSynapses activeColumn) (Htm.boost activeColumn) (Htm.key activeColumn) (Htm.pastCycles activeColumn) (Htm.pastOverlapCycles activeColumn)
     where
           -- changes permanence for all synapses in list base on their state
 
-          modifySynapses :: [Htm.DistalSynapse] -> [Htm.DistalSynapse]
+          modifySynapses :: [Htm.ProximalSynapse] -> [Htm.ProximalSynapse]
           modifySynapses = map changePermanence
 
           -- changes the value of a synapse based on its state
 
-          changePermanence :: Htm.DistalSynapse -> Htm.DistalSynapse
+          changePermanence :: Htm.ProximalSynapse -> Htm.ProximalSynapse
           changePermanence synapse
-            | Htm.dSynapseState synapse == Htm.Actual    = Htm.DistalSynapse (Htm.dInput synapse) (Htm.dSynapseState synapse) (increasePermanence $ Htm.dPermanence synapse)
-            | Htm.dSynapseState synapse == Htm.Potential = Htm.DistalSynapse (Htm.dInput synapse) (Htm.dSynapseState synapse) (decreasePermanence $ Htm.dPermanence synapse)
+            | Htm.pSynapseState synapse == Htm.Actual    = Htm.ProximalSynapse (Htm.pInput synapse) (Htm.pSynapseState synapse) (increasePermanence $ Htm.pPermanence synapse)
+            | Htm.pSynapseState synapse == Htm.Potential = Htm.ProximalSynapse (Htm.pInput synapse) (Htm.pSynapseState synapse) (decreasePermanence $ Htm.pPermanence synapse)
 
           -- increases permanence based on the region's permanenceInc value
 
@@ -84,7 +84,7 @@ adjustPermanences region activeColumn =
 -- returns the column passed to it with its boost value updated
 
 boostColumn :: Htm.Region -> Htm.Column -> Htm.Column
-boostColumn region column = Htm.Column (Htm.cells column) (Htm.distalSynapses column) updateBoost (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
+boostColumn region column = Htm.Column (Htm.cells column) (Htm.proximalSynapses column) updateBoost (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
     where
 
           -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
@@ -104,11 +104,12 @@ boostColumn region column = Htm.Column (Htm.cells column) (Htm.distalSynapses co
           activeDutyCycle :: Htm.Column -> Double
           activeDutyCycle c = (fromInteger $ sum (Htm.values $ Htm.pastCycles c) :: Double) / (fromInteger $ Htm.numOfVals $ Htm.pastCycles c :: Double)
 
+{-}
 boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 boostPermanences region column = Htm.Column (Htm.cells column) increasePermanences (Htm.boost column) (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
     where increasePermanences :: [Htm.DistalSynapse]
           increasePermanences =
-
+-}
 
 -- The list of columns that are within the inhibition radius of the column in question
 -- Top level function as it is used during multiple phases
