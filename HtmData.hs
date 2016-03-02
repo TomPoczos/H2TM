@@ -54,7 +54,7 @@ data ProximalSynapse  = ProximalSynapse  { pInput                :: Input
                                          }
 
 data Region           = Region           { columns               :: [Column]
-                                         , previouslyActiveCells :: [Cell]
+                                         , activeColumns         :: [Column]
                                          , desiredLocalActivity  :: LocalActivity
                                          , inhibitionRadius      :: InhibitionRadius
                                          , minimumOverlap        :: Overlap
