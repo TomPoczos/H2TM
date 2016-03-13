@@ -1,21 +1,55 @@
 module SpatialPooler
-( overlap
-, inhibition
+( updateOverlap
+, setActiveState
+, spatialPooler
 ) where
 
 import           Data.List
 import           Data.Maybe
+import           Flow
 import qualified HtmData    as Htm
 
+
+spatialPooler :: Htm.Region -> Htm.Region
+spatialPooler region =
+    Htm.Region (Htm.columns                                    region)
+               (Htm.columns region
+                    |> map (updateOverlap $ Htm.minimumOverlap region)
+                    |> map (setActiveState region)
+                    |> map (adjustPermanences region)
+                    |> map (boostColumn region))
+               (Htm.desiredLocalActivity                       region)
+               (Htm.inhibitionRadius                           region)
+               (Htm.minimumOverlap                             region)
+               (Htm.permanenceInc                              region)
+               (Htm.permanenceDec                              region)
+               (Htm.boostInc                                   region)
+
+    --
 
 -- PHASE 1: OVERLAP
 -- The number of distal synapses with that ar active AND connected to the column
 -- multiplied by the column's boost value
 
-overlap :: Htm.Column -> Htm.Overlap -> Htm.Overlap
-overlap column minOverlap
-    | rawOverlap < minOverlap = 0
-    | otherwise               =  rawOverlap * Htm.boost column
+updateOverlap :: Htm.Overlap -> Htm.Column -> Htm.Column
+updateOverlap minOverlap column
+    | rawOverlap < minOverlap = Htm.Column (Htm.cells              column)
+                                           (Htm.proximalSynapses   column)
+                                           (Htm.boost              column)
+                                           0
+                                           (Htm.key                column)
+                                           (Htm.pastCycles         column)
+                                           (Htm.pastOverlapCycles  column)
+                                           (Htm.columnState        column)
+
+    | otherwise               = Htm.Column (Htm.cells              column)
+                                           (Htm.proximalSynapses   column)
+                                           (Htm.boost              column)
+                                           (rawOverlap * Htm.boost column)
+                                           (Htm.key                column)
+                                           (Htm.pastCycles         column)
+                                           (Htm.pastOverlapCycles  column)
+                                           (Htm.columnState        column)
 
     where
           -- The number of distal synapses with that ar active AND connected to the column
@@ -43,29 +77,55 @@ overlap column minOverlap
 -- The list of columns within the inhibition radius of the column in question
 -- whose overlap is larger than 0 and larger than the desired local activity
 
-activeColumns :: Htm.Region -> [Htm.Column]
-activeColumns region = nub $ concat $ map (inhibition region) $ Htm.columns region
+setActiveState :: Htm.Region -> Htm.Column -> Htm.Column
+setActiveState region column
+    | isWinner column =
+        Htm.Column (Htm.cells             column)
+                   (Htm.proximalSynapses  column)
+                   (Htm.boost             column)
+                   (Htm.overlap           column)
+                   (Htm.key               column)
+                   (Htm.pastCycles        column)
+                   (Htm.pastOverlapCycles column)
+                   Htm.ActiveColumn
+    | not $ isWinner column =
+        Htm.Column (Htm.cells             column)
+                   (Htm.proximalSynapses  column)
+                   (Htm.boost             column)
+                   (Htm.overlap           column)
+                   (Htm.key               column)
+                   (Htm.pastCycles        column)
+                   (Htm.pastOverlapCycles column)
+                   Htm.InactiveColumn
 
-inhibition :: Htm.Region -> Htm.Column -> [Htm.Column]
-inhibition region column = filter isWinner $ neighbours region column
-    where
-          -- Determines whether the column's overlap is larger than 0 and larger than the desired local activity
+          -- Determines whether the column's overlap is larger than 0 and
+          -- larger than the kth highest overlap value of its neighbours
+          -- where k is the desiredLocalActivity of the region/column
 
-          isWinner :: Htm.Column -> Bool
-          isWinner c = overlap c (Htm.minimumOverlap region) > 0.0
-                    && overlap c (Htm.minimumOverlap region) >= (fromInteger $ Htm.desiredLocalActivity region :: Double)
+    where isWinner :: Htm.Column -> Bool
+          isWinner c = Htm.overlap c > 0.0
+                     && Htm.overlap c >=  Htm.overlap (head $ drop (fromInteger (Htm.desiredLocalActivity region - 1) :: Int) $ sortBy compareOverlaps $ neighbours region c)
+
+          compareOverlaps columnA columnB
+              | Htm.overlap columnA < Htm.overlap columnB                = LT
+              | Htm.overlap columnA > Htm.overlap columnB                = GT
+              | abs (Htm.overlap columnA - Htm.overlap columnB) <= 0.001 = EQ
 
 -- PHASE 3.1: LEARNING
 -- returns a modified column with the permanence of each of its distal syanpses updated
 
 adjustPermanences :: Htm.Region -> Htm.Column -> Htm.Column
-adjustPermanences region activeColumn =
-    Htm.Column (Htm.cells                             activeColumn)
-               (modifySynapses $ Htm.proximalSynapses activeColumn)
-               (Htm.boost                             activeColumn)
-               (Htm.key                               activeColumn)
-               (Htm.pastCycles                        activeColumn)
-               (Htm.pastOverlapCycles                 activeColumn)
+adjustPermanences region activeColumn
+    | Htm.columnState activeColumn == Htm.InactiveColumn = activeColumn
+    | Htm.columnState activeColumn == Htm.ActiveColumn   =
+        Htm.Column (Htm.cells                             activeColumn)
+                   (modifySynapses $ Htm.proximalSynapses activeColumn)
+                   (Htm.boost                             activeColumn)
+                   (Htm.overlap                           activeColumn)
+                   (Htm.key                               activeColumn)
+                   (Htm.pastCycles                        activeColumn)
+                   (Htm.pastOverlapCycles                 activeColumn)
+                   (Htm.columnState                       activeColumn)
     where
           -- changes permanence for all synapses in list base on their state
 
@@ -102,9 +162,11 @@ boostColumn :: Htm.Region -> Htm.Column -> Htm.Column
 boostColumn region column = Htm.Column (Htm.cells             column)
                                        (Htm.proximalSynapses  column)
                                        updateBoost
+                                       (Htm.overlap           column)
                                        (Htm.key               column)
                                        (Htm.pastCycles        column)
                                        (Htm.pastOverlapCycles column)
+                                       (Htm.columnState       column)
     where
 
           -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
@@ -126,7 +188,7 @@ boostColumn region column = Htm.Column (Htm.cells             column)
                 (fromInteger $ sum (Htm.values $ Htm.pastCycles c) :: Double)
               / (fromInteger $ Htm.numOfVals $ Htm.pastCycles c :: Double)
 
-{-}
+{-
 boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 boostPermanences region column = Htm.Column (Htm.cells column) increasePermanences (Htm.boost column) (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
     where increasePermanences :: [Htm.DistalSynapse]

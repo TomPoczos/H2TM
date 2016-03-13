@@ -1,5 +1,6 @@
 module HtmData
 ( CellState        (..)
+, ColumnState      (..)
 , SynapseState     (..)
 , Cell             (..)
 , DistalSynapse    (..)
@@ -25,7 +26,9 @@ type InhibitionRadius = Integer
 
 type Overlap          = Double
 
-data CellState        = Active | Predictive | Inactive
+data CellState        = ActiveCell | PredictiveCell | InactiveCell
+
+data ColumnState      = ActiveColumn | InactiveColumn
 
 data SynapseState     = Potential | Actual
 
@@ -38,9 +41,11 @@ data Cell             = Cell             { cellState             :: CellState
 data Column           = Column           { cells                 :: [Cell]
                                          , proximalSynapses      :: [ProximalSynapse]
                                          , boost                 :: Double
+                                         , overlap               :: Overlap
                                          , key                   :: Integer
                                          , pastCycles            :: DutyCycleHistory
                                          , pastOverlapCycles     :: DutyCycleHistory
+                                         , columnState           :: ColumnState
                                          }
 
 data DistalSynapse    = DistalSynapse    { dInput                :: Input
@@ -86,13 +91,15 @@ instance Eq Input where
  _ == _ = False
 
 instance Eq Column where
- Column a1 a2 a3 a4 a5 a6 == Column b1 b2 b3 b4 b5 b6 =
+ Column a1 a2 a3 a4 a5 a6 a7 a8 == Column b1 b2 b3 b4 b5 b6 b7 b8 =
      (a1 == b1)
      && (a2 == b2)
      && (abs (a3 - b3) <= 0.001)
-     && (a4 == b4)
+     && (abs (a4 - b4) <= 0.001)
      && (a5 == b5)
      && (a6 == b6)
+     && (a7 == b7)
+     && (a8 == b8)
 
 instance Eq Region where
  Region a1 a2 a3 a4 a5 a6 a7 a8 == Region b1 b2 b3 b4 b5 b6 b7 b8 =
@@ -113,8 +120,13 @@ instance Eq SynapseState where
  Actual == Actual = True
  _ == _ = False
 
+instance Eq ColumnState where
+    ActiveColumn == ActiveColumn = True
+    InactiveColumn == InactiveColumn = True
+    _ == _ = False
+
 instance Eq CellState where
- Active == Active = True
- Inactive == Inactive = True
- Predictive == Predictive = True
+ ActiveCell == ActiveCell = True
+ InactiveCell == InactiveCell = True
+ PredictiveCell == PredictiveCell = True
  _ == _ = False
