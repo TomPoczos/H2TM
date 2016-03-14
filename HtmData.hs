@@ -47,7 +47,7 @@ data Column           = Column           { cells                 :: [Cell]
                                          , overlap               :: Overlap
                                          , key                   :: Integer
                                          , dutyCycles            :: CycleHistory
-                                         , overlapCycles     :: CycleHistory
+                                         , overlapCycles         :: CycleHistory
                                          , columnState           :: ColumnState
                                          }
 
@@ -75,53 +75,53 @@ data Region           = Region           { columns               :: [Column]
 
 
 instance Eq DistalSynapse where
- DistalSynapse a1 a2 a3 == DistalSynapse b1 b2 b3 =
-     (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001)
+    DistalSynapse a1 a2 a3 == DistalSynapse b1 b2 b3 =
+        (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001)
 
 instance Eq ProximalSynapse where
- ProximalSynapse a1 a2 a3 == ProximalSynapse b1 b2 b3 =
-     (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001)
+    ProximalSynapse a1 a2 a3 == ProximalSynapse b1 b2 b3 =
+        (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001)
 
 instance Eq Input where
- On == On = True
- Off == Off = True
- _ == _ = False
+    On == On = True
+    Off == Off = True
+    _ == _ = False
 
 instance Eq Column where
- Column a1 a2 a3 a4 a5 a6 a7 a8 == Column b1 b2 b3 b4 b5 b6 b7 b8 =
-     (a1 == b1)
-     && (a2 == b2)
-     && (abs (a3 - b3) <= 0.001)
-     && (abs (a4 - b4) <= 0.001)
-     && (a5 == b5)
-     && (a6 == b6)
-     && (a7 == b7)
-     && (a8 == b8)
+    Column a1 a2 a3 a4 a5 a6 a7 a8 == Column b1 b2 b3 b4 b5 b6 b7 b8 =
+        (a1 == b1)
+        && (a2 == b2)
+        && (abs (a3 - b3) <= 0.001)
+        && (abs (a4 - b4) <= 0.001)
+        && (a5 == b5)
+        && (a6 == b6)
+        && (a7 == b7)
+        && (a8 == b8)
 
 instance Eq Region where
- Region a1 a2 a3 a4 a5 a6 a7 a8 a9 == Region b1 b2 b3 b4 b5 b6 b7 b8 b9 =
-     (a1 == b1)
-     && (a2 == b2)
-     && (a3 == b3)
-     && (a4 == b4)
-     && (abs (a5 - b5) <= 0.001)
-     && (abs (a6 - b6) <= 0.001)
-     && (abs (a7 - b7) <= 0.001)
-     && (abs (a8 - b8) <= 0.001)
-     && (a9 == b9)
+    Region a1 a2 a3 a4 a5 a6 a7 a8 a9 == Region b1 b2 b3 b4 b5 b6 b7 b8 b9 =
+        (a1 == b1)
+        && (a2 == b2)
+        && (a3 == b3)
+        && (a4 == b4)
+        && (abs (a5 - b5) <= 0.001)
+        && (abs (a6 - b6) <= 0.001)
+        && (abs (a7 - b7) <= 0.001)
+        && (abs (a8 - b8) <= 0.001)
+        && (a9 == b9)
 
 instance Eq Cell where
- Cell a1 a2 == Cell b1 b2 = (a1 == b1) && (a2 == b2)
+    Cell a1 a2 == Cell b1 b2 = (a1 == b1) && (a2 == b2)
 
 instance Eq OperationMode where
     Compliant == Compliant=  True
     Modified == Modified = True
-    _ == _ = False 
+    _ == _ = False
 
 instance Eq SynapseState where
- Potential == Potential = True
- Actual == Actual = True
- _ == _ = False
+    Potential == Potential = True
+    Actual == Actual = True
+    _ == _ = False
 
 instance Eq ColumnState where
     ActiveColumn == ActiveColumn = True
@@ -129,7 +129,7 @@ instance Eq ColumnState where
     _ == _ = False
 
 instance Eq CellState where
- ActiveCell == ActiveCell = True
- InactiveCell == InactiveCell = True
- PredictiveCell == PredictiveCell = True
- _ == _ = False
+    ActiveCell == ActiveCell = True
+    InactiveCell == InactiveCell = True
+    PredictiveCell == PredictiveCell = True
+    _ == _ = False
