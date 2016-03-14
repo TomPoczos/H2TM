@@ -17,6 +17,7 @@ module HtmData
 ) where
 
 import CycleHistory
+import RestrictedParallelism
 
 type Permanence       = Double
 
@@ -72,6 +73,7 @@ data Region           = Region           { columns               :: [Column]
                                          , boostInc              :: Double
                                          , permanenceThreshold   :: Double
                                          , operationMode         :: OperationMode
+                                         , parallelismMode       :: ParallelismMode
                                          }
 
 
@@ -101,7 +103,7 @@ instance Eq Column where
         && (a8 == b8)
 
 instance Eq Region where
-    Region a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 == Region b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 =
+    Region a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 == Region b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 =
         (a1 == b1)
         && (a2 == b2)
         && (a3 == b3)
@@ -112,6 +114,7 @@ instance Eq Region where
         && (abs (a8 - b8) <= 0.001)
         && (abs (a9 - b9) <= 0.001)
         && (a10 == b10)
+        && (a11 == b11)
 
 instance Eq Cell where
     Cell a1 a2 == Cell b1 b2 = (a1 == b1) && (a2 == b2)
