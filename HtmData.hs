@@ -27,6 +27,8 @@ type InhibitionRadius = Integer
 
 type Overlap          = Double
 
+data OperationMode    = Compliant | Modified
+
 data CellState        = ActiveCell | PredictiveCell | InactiveCell
 
 data ColumnState      = ActiveColumn | InactiveColumn
@@ -67,6 +69,7 @@ data Region           = Region           { columns               :: [Column]
                                          , permanenceInc         :: Permanence
                                          , permanenceDec         :: Permanence
                                          , boostInc              :: Double
+                                         , operationMode         :: OperationMode
                                          }
 
 
@@ -96,7 +99,7 @@ instance Eq Column where
      && (a8 == b8)
 
 instance Eq Region where
- Region a1 a2 a3 a4 a5 a6 a7 a8 == Region b1 b2 b3 b4 b5 b6 b7 b8 =
+ Region a1 a2 a3 a4 a5 a6 a7 a8 a9 == Region b1 b2 b3 b4 b5 b6 b7 b8 b9 =
      (a1 == b1)
      && (a2 == b2)
      && (a3 == b3)
@@ -105,9 +108,15 @@ instance Eq Region where
      && (abs (a6 - b6) <= 0.001)
      && (abs (a7 - b7) <= 0.001)
      && (abs (a8 - b8) <= 0.001)
+     && (a9 == b9)
 
 instance Eq Cell where
  Cell a1 a2 == Cell b1 b2 = (a1 == b1) && (a2 == b2)
+
+instance Eq OperationMode where
+    Compliant == Compliant=  True
+    Modified == Modified = True
+    _ == _ = False 
 
 instance Eq SynapseState where
  Potential == Potential = True
