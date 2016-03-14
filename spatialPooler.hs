@@ -7,7 +7,8 @@ module SpatialPooler
 import           Data.List
 import           Data.Maybe
 import           Flow
-import qualified HtmData    as Htm
+import qualified CycleHistory as Ch
+import qualified HtmData      as Htm
 
 
 spatialPooler :: Htm.Region -> Htm.Region
@@ -38,8 +39,8 @@ updateOverlap minOverlap column
                                            (Htm.boost              column)
                                            0
                                            (Htm.key                column)
-                                           (Htm.pastCycles         column)
-                                           (Htm.pastOverlapCycles  column)
+                                           (Htm.dutyCycles         column)
+                                           (Htm.overlapCycles      column)
                                            (Htm.columnState        column)
 
     | otherwise               = Htm.Column (Htm.cells              column)
@@ -47,8 +48,8 @@ updateOverlap minOverlap column
                                            (Htm.boost              column)
                                            (rawOverlap * Htm.boost column)
                                            (Htm.key                column)
-                                           (Htm.pastCycles         column)
-                                           (Htm.pastOverlapCycles  column)
+                                           (Htm.dutyCycles          column)
+                                           (Htm.overlapCycles     column)
                                            (Htm.columnState        column)
 
     where
@@ -85,8 +86,8 @@ setActiveState region column
                    (Htm.boost             column)
                    (Htm.overlap           column)
                    (Htm.key               column)
-                   (Htm.pastCycles        column)
-                   (Htm.pastOverlapCycles column)
+                   (Htm.dutyCycles        column)
+                   (Htm.overlapCycles     column)
                    Htm.ActiveColumn
     | not $ isWinner column =
         Htm.Column (Htm.cells             column)
@@ -94,8 +95,8 @@ setActiveState region column
                    (Htm.boost             column)
                    (Htm.overlap           column)
                    (Htm.key               column)
-                   (Htm.pastCycles        column)
-                   (Htm.pastOverlapCycles column)
+                   (Htm.dutyCycles        column)
+                   (Htm.overlapCycles     column)
                    Htm.InactiveColumn
 
           -- Determines whether the column's overlap is larger than 0 and
@@ -123,8 +124,8 @@ adjustPermanences region activeColumn
                    (Htm.boost                             activeColumn)
                    (Htm.overlap                           activeColumn)
                    (Htm.key                               activeColumn)
-                   (Htm.pastCycles                        activeColumn)
-                   (Htm.pastOverlapCycles                 activeColumn)
+                   (Htm.dutyCycles                        activeColumn)
+                   (Htm.overlapCycles                 activeColumn)
                    (Htm.columnState                       activeColumn)
     where
           -- changes permanence for all synapses in list base on their state
@@ -164,8 +165,8 @@ boostColumn region column = Htm.Column (Htm.cells             column)
                                        updateBoost
                                        (Htm.overlap           column)
                                        (Htm.key               column)
-                                       (Htm.pastCycles        column)
-                                       (Htm.pastOverlapCycles column)
+                                       (Htm.dutyCycles        column)
+                                       (Htm.overlapCycles column)
                                        (Htm.columnState       column)
     where
 
