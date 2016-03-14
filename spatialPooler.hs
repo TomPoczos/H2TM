@@ -14,22 +14,25 @@ import qualified HtmData      as Htm
 
 spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region =
-    Htm.Region (Htm.columns                                    region)
-               (Htm.columns region
-                    |> flexibleParMap (Htm.parallelismMode region) (updateOverlap $ Htm.minimumOverlap region)
-                    |> flexibleParMap (Htm.parallelismMode region) (setActiveState region)
-                    |> flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
-                    |> flexibleParMap (Htm.parallelismMode region) (boostColumn region)
-                    |> flexibleParMap (Htm.parallelismMode region) (boostPermanences region))
-               (Htm.desiredLocalActivity                       region)
-               (Htm.inhibitionRadius                           region)
-               (Htm.minimumOverlap                             region)
-               (Htm.permanenceInc                              region)
-               (Htm.permanenceDec                              region)
-               (Htm.boostInc                                   region)
-               (Htm.permanenceThreshold                        region)
-               (Htm.operationMode                              region)
-               (Htm.parallelismMode                            region)
+    Htm.Region (Htm.columns              region)
+               runSpatialPooler
+               (Htm.desiredLocalActivity region)
+               (Htm.inhibitionRadius     region)
+               (Htm.minimumOverlap       region)
+               (Htm.permanenceInc        region)
+               (Htm.permanenceDec        region)
+               (Htm.boostInc             region)
+               (Htm.permanenceThreshold  region)
+               (Htm.operationMode        region)
+               (Htm.parallelismMode      region)
+
+    where runSpatialPooler :: [Htm.Column]
+          runSpatialPooler = Htm.columns region
+              |> flexibleParMap (Htm.parallelismMode region) (updateOverlap $ Htm.minimumOverlap region)
+              |> flexibleParMap (Htm.parallelismMode region) (setActiveState region)
+              |> flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
+              |> flexibleParMap (Htm.parallelismMode region) (boostColumn region)
+              |> flexibleParMap (Htm.parallelismMode region) (boostPermanences region)
     --
 
 -- PHASE 1: OVERLAP
@@ -111,6 +114,7 @@ setActiveState region column
           isWinner c = Htm.overlap c > 0.0
                      && Htm.overlap c >=  Htm.overlap (head $ drop (fromInteger (Htm.desiredLocalActivity region - 1) :: Int) $ sortBy compareOverlaps $ neighbours region c)
 
+          compareOverlaps :: Htm.Column -> Htm.Column -> Ordering
           compareOverlaps columnA columnB
               | Htm.overlap columnA < Htm.overlap columnB                = LT
               | Htm.overlap columnA > Htm.overlap columnB                = GT
