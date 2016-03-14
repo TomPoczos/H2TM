@@ -17,7 +17,8 @@ module HtmData
 ) where
 
 import CycleHistory
-import RestrictedParallelism
+import FlexibleParallelism
+import Control.DeepSeq
 
 type Permanence       = Double
 
@@ -76,6 +77,7 @@ data Region           = Region           { columns               :: [Column]
                                          , parallelismMode       :: ParallelismMode
                                          }
 
+instance NFData Column
 
 
 instance Eq DistalSynapse where

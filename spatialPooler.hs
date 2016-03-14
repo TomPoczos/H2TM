@@ -7,6 +7,7 @@ module SpatialPooler
 import           Data.List
 import           Data.Maybe
 import           Flow
+import           FlexibleParallelism
 import qualified CycleHistory as Ch
 import qualified HtmData      as Htm
 
@@ -15,11 +16,11 @@ spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region =
     Htm.Region (Htm.columns                                    region)
                (Htm.columns region
-                    |> map (updateOverlap $ Htm.minimumOverlap region)
-                    |> map (setActiveState region)
-                    |> map (adjustPermanences region)
-                    |> map (boostColumn region)
-                    |> map (boostPermanences region))
+                    |> flexibleParMap (Htm.parallelismMode region) (updateOverlap $ Htm.minimumOverlap region)
+                    |> flexibleParMap (Htm.parallelismMode region) (setActiveState region)
+                    |> flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
+                    |> flexibleParMap (Htm.parallelismMode region) (boostColumn region)
+                    |> flexibleParMap (Htm.parallelismMode region) (boostPermanences region))
                (Htm.desiredLocalActivity                       region)
                (Htm.inhibitionRadius                           region)
                (Htm.minimumOverlap                             region)
@@ -28,6 +29,7 @@ spatialPooler region =
                (Htm.boostInc                                   region)
                (Htm.permanenceThreshold                        region)
                (Htm.operationMode                              region)
+               (Htm.parallelismMode                            region)
     --
 
 -- PHASE 1: OVERLAP
