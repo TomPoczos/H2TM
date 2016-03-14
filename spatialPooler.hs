@@ -176,8 +176,6 @@ boostColumn region column = Htm.Column (Htm.cells             column)
 
           updateBoost :: Double
           updateBoost
-            | (column
-                |> Htm.dutyCycles
             | (column |> Htm.dutyCycles |> Ch.activeCycle) > minDutyCycle = 1
             | otherwise = Htm.boost column + Htm.boostInc region
 
