@@ -50,7 +50,7 @@ updateOverlap minOverlap column
                                            (Htm.boost              column)
                                            (rawOverlap * Htm.boost column)
                                            (Htm.key                column)
-                                           (Htm.dutyCycles          column)
+                                           (Htm.dutyCycles         column)
                                            (Htm.overlapCycles     column)
                                            (Htm.columnState        column)
 
@@ -127,7 +127,7 @@ adjustPermanences region activeColumn
                    (Htm.overlap                           activeColumn)
                    (Htm.key                               activeColumn)
                    (Htm.dutyCycles                        activeColumn)
-                   (Htm.overlapCycles                 activeColumn)
+                   (Htm.overlapCycles                     activeColumn)
                    (Htm.columnState                       activeColumn)
     where
           -- changes permanence for all synapses in list base on their state
@@ -192,11 +192,11 @@ boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 boostPermanences region column = Htm.Column (Htm.cells         column)
                                             increasePermanences
                                             (Htm.boost         column)
-                                            (Htm.overlap           column)
+                                            (Htm.overlap       column)
                                             (Htm.key           column)
                                             (Htm.dutyCycles    column)
                                             (Htm.overlapCycles column)
-                                            (Htm.columnState       column)
+                                            (Htm.columnState   column)
 
     where increasePermanences :: [Htm.ProximalSynapse]
           increasePermanences = case region |> Htm.operationMode of
