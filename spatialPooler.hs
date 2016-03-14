@@ -178,8 +178,8 @@ boostColumn region column = Htm.Column (Htm.cells             column)
           updateBoost
             | (column
                 |> Htm.dutyCycles
-                |> Ch.activeCycle) > minDutyCycle = 1
-            | otherwise                           = Htm.boost column + Htm.boostInc region
+            | (column |> Htm.dutyCycles |> Ch.activeCycle) > minDutyCycle = 1
+            | otherwise = Htm.boost column + Htm.boostInc region
 
           -- 1% of the highest DutyCycle of the column's neighbours' duty cycles
 
