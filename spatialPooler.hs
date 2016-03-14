@@ -205,28 +205,30 @@ boostPermanences region column = Htm.Column (Htm.cells         column)
                                             (Htm.columnState   column)
 
     where increasePermanences :: [Htm.ProximalSynapse]
-          increasePermanences = case region |> Htm.operationMode of
-              Htm.Compliant ->
+          increasePermanences
+              | Htm.operationMode region == Htm.Compliant =
                   if (column |> Htm.overlapCycles |> Ch.activeCycle) < minDutyCycle
-                      then map increasePermanence (column |> Htm.proximalSynapses)
-                      else column |> Htm.proximalSynapses
-              Htm.Modified  ->
+                      then Htm.proximalSynapses column |> map increasePermanence
+                      else Htm.proximalSynapses column
+              | Htm.operationMode region == Htm.Modified =
                   if (column |> Htm.overlapCycles |> Ch.activeCycle) < minOverlapCycle
-                      then map increasePermanence (column |> Htm.proximalSynapses)
-                      else column |> Htm.proximalSynapses
+                      then Htm.proximalSynapses column |> map increasePermanence
+                      else Htm.proximalSynapses column
 
           increasePermanence synapse =
               Htm.ProximalSynapse (Htm.pInput synapse)
-                                  (if 0.1 * (region |> Htm.permanenceThreshold) > (region |> Htm.permanenceThreshold)
+                                  (if increasedPermanence synapse > Htm.permanenceThreshold region
                                       then Htm.Actual
                                       else Htm.Potential)
-                                  (0.1 * (region |> Htm.permanenceThreshold))
+                                  (increasedPermanence synapse)
+
+          increasedPermanence :: Htm.ProximalSynapse -> Htm.Permanence
+          increasedPermanence synapse = Htm.pPermanence synapse + 0.1 * Htm.permanenceThreshold region
 
           minDutyCycle :: Double
-          minDutyCycle = 0.01 * (column |> neighbours region
-                                        |> map (Htm.dutyCycles .> Ch.activeCycle)
-                                        |> maximum)
-
+          minDutyCycle    = 0.01 * (column |> neighbours region
+                                           |> map (Htm.dutyCycles .> Ch.activeCycle)
+                                           |> maximum)
           minOverlapCycle :: Double
           minOverlapCycle = 0.01 * (column |> neighbours region
                                            |> map (Htm.overlapCycles .> Ch.activeCycle)

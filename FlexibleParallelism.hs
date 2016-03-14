@@ -1,7 +1,8 @@
 module FlexibleParallelism
 ( flexibleParMap
 , ParallelismMode(..)
-, NumOfThreads) where
+, NumOfThreads
+) where
 
 import qualified Control.Monad.Par as Par
 import Data.List.Split
