@@ -42,7 +42,7 @@ updateOverlap minOverlap column
                                            0
                                            (Htm.key                column)
                                            (Htm.dutyCycles         column)
-                                           (Htm.overlapCycles      column)
+                                           (column |> Htm.overlapCycles |> Ch.add False)
                                            (Htm.columnState        column)
 
     | otherwise               = Htm.Column (Htm.cells              column)
@@ -51,7 +51,7 @@ updateOverlap minOverlap column
                                            (rawOverlap * Htm.boost column)
                                            (Htm.key                column)
                                            (Htm.dutyCycles         column)
-                                           (Htm.overlapCycles     column)
+                                           (column |> Htm.overlapCycles |> Ch.add True)
                                            (Htm.columnState        column)
 
     where
@@ -88,7 +88,7 @@ setActiveState region column
                    (Htm.boost             column)
                    (Htm.overlap           column)
                    (Htm.key               column)
-                   (Htm.dutyCycles        column)
+                   (column |> Htm.dutyCycles |> Ch.add True)
                    (Htm.overlapCycles     column)
                    Htm.ActiveColumn
     | not $ isWinner column =
@@ -97,7 +97,7 @@ setActiveState region column
                    (Htm.boost             column)
                    (Htm.overlap           column)
                    (Htm.key               column)
-                   (Htm.dutyCycles        column)
+                   (column |> Htm.dutyCycles |> Ch.add False)
                    (Htm.overlapCycles     column)
                    Htm.InactiveColumn
 
