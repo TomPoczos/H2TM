@@ -18,14 +18,16 @@ spatialPooler region =
                     |> map (updateOverlap $ Htm.minimumOverlap region)
                     |> map (setActiveState region)
                     |> map (adjustPermanences region)
-                    |> map (boostColumn region))
+                    |> map (boostColumn region)
+                    |> map (boostPermanences region))
                (Htm.desiredLocalActivity                       region)
                (Htm.inhibitionRadius                           region)
                (Htm.minimumOverlap                             region)
                (Htm.permanenceInc                              region)
                (Htm.permanenceDec                              region)
                (Htm.boostInc                                   region)
-
+               (Htm.permanenceThreshold                        region)
+               (Htm.operationMode                              region)
     --
 
 -- PHASE 1: OVERLAP
@@ -166,7 +168,7 @@ boostColumn region column = Htm.Column (Htm.cells             column)
                                        (Htm.overlap           column)
                                        (Htm.key               column)
                                        (Htm.dutyCycles        column)
-                                       (Htm.overlapCycles column)
+                                       (Htm.overlapCycles     column)
                                        (Htm.columnState       column)
     where
 
@@ -186,12 +188,44 @@ boostColumn region column = Htm.Column (Htm.cells             column)
                                         |> map (Htm.dutyCycles .> Ch.activeCycle)
                                         |> maximum)
 
-{-
 boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
-boostPermanences region column = Htm.Column (Htm.cells column) increasePermanences (Htm.boost column) (Htm.key column) (Htm.pastCycles column) (Htm.pastOverlapCycles column)
-    where increasePermanences :: [Htm.DistalSynapse]
-          increasePermanences =
--}
+boostPermanences region column = Htm.Column (Htm.cells         column)
+                                            increasePermanences
+                                            (Htm.boost         column)
+                                            (Htm.overlap           column)
+                                            (Htm.key           column)
+                                            (Htm.dutyCycles    column)
+                                            (Htm.overlapCycles column)
+                                            (Htm.columnState       column)
+
+    where increasePermanences :: [Htm.ProximalSynapse]
+          increasePermanences = case region |> Htm.operationMode of
+              Htm.Compliant ->
+                  if (column |> Htm.overlapCycles |> Ch.activeCycle) < minDutyCycle
+                      then map increasePermanence (column |> Htm.proximalSynapses)
+                      else column |> Htm.proximalSynapses
+              Htm.Modified  ->
+                  if (column |> Htm.overlapCycles |> Ch.activeCycle) < minOverlapCycle
+                      then map increasePermanence (column |> Htm.proximalSynapses)
+                      else column |> Htm.proximalSynapses
+
+          increasePermanence synapse =
+              Htm.ProximalSynapse (Htm.pInput synapse)
+                                  (if 0.1 * (region |> Htm.permanenceThreshold) > (region |> Htm.permanenceThreshold)
+                                      then Htm.Actual
+                                      else Htm.Potential)
+                                  (0.1 * (region |> Htm.permanenceThreshold))
+
+          minDutyCycle :: Double
+          minDutyCycle = 0.01 * (column |> neighbours region
+                                        |> map (Htm.dutyCycles .> Ch.activeCycle)
+                                        |> maximum)
+
+          minOverlapCycle :: Double
+          minOverlapCycle = 0.01 * (column |> neighbours region
+                                           |> map (Htm.overlapCycles .> Ch.activeCycle)
+                                           |> maximum)
+
 
 -- The list of columns that are within the inhibition radius of the column in question
 -- Top level function as it is used during multiple phases
