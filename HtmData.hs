@@ -8,13 +8,14 @@ module HtmData
 , Input            (..)
 , Column           (..)
 , Region           (..)
-, DutyCycleHistory (..)
 , Permanence
 , Boost
 , LocalActivity
 , InhibitionRadius
 , Overlap
 ) where
+
+import CycleHistory
 
 type Permanence       = Double
 
@@ -43,8 +44,8 @@ data Column           = Column           { cells                 :: [Cell]
                                          , boost                 :: Double
                                          , overlap               :: Overlap
                                          , key                   :: Integer
-                                         , pastCycles            :: DutyCycleHistory
-                                         , pastOverlapCycles     :: DutyCycleHistory
+                                         , dutyCycles            :: CycleHistory
+                                         , overlapCycles     :: CycleHistory
                                          , columnState           :: ColumnState
                                          }
 
@@ -68,14 +69,7 @@ data Region           = Region           { columns               :: [Column]
                                          , boostInc              :: Double
                                          }
 
-data DutyCycleHistory = DutyCycleHistory { values                :: [Integer]
-                                         , numOfVals             :: Integer
-                                         , maxAmount             :: Integer
-                                         }
 
-instance Eq DutyCycleHistory where
-    DutyCycleHistory a1 a2 a3 == DutyCycleHistory b1 b2 b3 =
-        a1 == b1 && a2 == b2 && a3 == b3
 
 instance Eq DistalSynapse where
  DistalSynapse a1 a2 a3 == DistalSynapse b1 b2 b3 =
