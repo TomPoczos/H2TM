@@ -175,18 +175,17 @@ boostColumn region column = Htm.Column (Htm.cells             column)
 
           updateBoost :: Double
           updateBoost
-            | activeDutyCycle column > minDutyCycle = 1
-            | otherwise                             = Htm.boost column + Htm.boostInc region
+            | (column
+                |> Htm.dutyCycles
+                |> Ch.activeCycle) > minDutyCycle = 1
+            | otherwise                           = Htm.boost column + Htm.boostInc region
 
           -- 1% of the highest DutyCycle of the column's neighbours' duty cycles
 
           minDutyCycle :: Double
-          minDutyCycle = 0.01 * foldr (max . activeDutyCycle) 0.0 (neighbours region column)
-
-          activeDutyCycle :: Htm.Column -> Double
-          activeDutyCycle c =
-                (fromInteger $ sum (Htm.values $ Htm.pastCycles c) :: Double)
-              / (fromInteger $ Htm.numOfVals $ Htm.pastCycles c :: Double)
+          minDutyCycle = 0.01 * (column |> neighbours region
+                                        |> map (Htm.dutyCycles .> Ch.activeCycle)
+                                        |> maximum)
 
 {-
 boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
