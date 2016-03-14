@@ -10,6 +10,12 @@ type NumOfThreads = Int
 
 data ParallelismMode  = Agressive | Limited NumOfThreads | None
 
+instance Eq ParallelismMode where
+    Agressive == Agressive = True
+    None == None = True
+    Limited num1 == Limited num2 = num1 == num2
+    _ == _ = False
+
 -- maps the function to the list parallely in a way so that only the specified number of threads is created
 
 -- Implementation of the limited option:
