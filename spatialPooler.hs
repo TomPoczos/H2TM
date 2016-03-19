@@ -16,7 +16,7 @@ spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region = region {Htm.columns = runSpatialPooler}
     where runSpatialPooler :: [Htm.Column]
           runSpatialPooler = Htm.columns region
-              |> flexibleParMap (Htm.parallelismMode region) (updateOverlap $ Htm.minimumOverlap region)
+              |> flexibleParMap (Htm.parallelismMode region) (region |> Htm.minimumOverlap |> updateOverlap)
               |> flexibleParMap (Htm.parallelismMode region) (setActiveState region)
               |> flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
               |> flexibleParMap (Htm.parallelismMode region) (boostColumn region)
@@ -39,12 +39,14 @@ updateOverlap minOverlap column =
           -- The number of distal synapses with that ar active AND connected to the column
 
           rawOverlap :: Htm.Overlap
-          rawOverlap = fromInteger $ sum $ map (oneOnInput . Htm.pInput) connectedProximalSynapses :: Double
+          rawOverlap = connectedProximalSynapses |> map (Htm.pInput .> oneOnInput)
+                                                 |> sum
+                                                 |> fromInteger :: Double
 
           -- The number of ALL distal synapses connected to the column
 
           connectedProximalSynapses :: [Htm.ProximalSynapse]
-          connectedProximalSynapses = filter connected $ Htm.proximalSynapses column
+          connectedProximalSynapses = column |> Htm.proximalSynapses |> filter connected
 
           -- Converts SynapseState to 0 or 1
 
@@ -75,7 +77,11 @@ setActiveState region column =
 
     where isWinner :: Htm.Column -> Bool
           isWinner c = Htm.overlap c > 0.0
-                     && Htm.overlap c >=  Htm.overlap (head $ drop (fromInteger (Htm.desiredLocalActivity region - 1) :: Int) $ sortBy compareOverlaps $ neighbours region c)
+                    && Htm.overlap c >= (c |> neighbours region
+                                           |> sortBy compareOverlaps
+                                           |> drop ((Htm.desiredLocalActivity region - 1) |> fromInteger :: Int)
+                                           |> head
+                                           |> Htm.overlap)
 
           compareOverlaps :: Htm.Column -> Htm.Column -> Ordering
           compareOverlaps columnA columnB
