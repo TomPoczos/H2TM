@@ -9,6 +9,8 @@ module HtmData
 , Column           (..)
 , Region           (..)
 , OperationMode    (..)
+, DistalDendrite   (..)
+, DistalDendriteState (..)
 , Permanence
 , Boost
 , LocalActivity
@@ -34,6 +36,8 @@ data OperationMode    = Compliant | Modified
 
 data CellState        = ActiveCell | PredictiveCell | InactiveCell
 
+data DistalDendriteState = ActiveDendrite | InactiveDendrite
+
 data ColumnState      = ActiveColumn | InactiveColumn
 
 data SynapseState     = Potential | Actual
@@ -41,7 +45,9 @@ data SynapseState     = Potential | Actual
 data Input            = On | Off
 
 data Cell             = Cell             { cellState             :: CellState
-                                         , distalSynapses        :: [DistalSynapse]
+                                         --, prevCellState         :: CellState
+                                         , distalDendrites       :: [DistalDendrite]
+                                         , permanence            :: Permanence
                                          }
 
 data Column           = Column           { cells                 :: [Cell]
@@ -52,6 +58,11 @@ data Column           = Column           { cells                 :: [Cell]
                                          , dutyCycles            :: CycleHistory
                                          , overlapCycles         :: CycleHistory
                                          , columnState           :: ColumnState
+                                         }
+
+data DistalDendrite  = DistalDendrite    { distalSynapses        :: [DistalSynapse]
+                                         , sequenceSegment       :: Bool
+                                         , distalDendriteState   :: DistalDendriteState
                                          }
 
 data DistalSynapse    = DistalSynapse    { dInput                :: Input
@@ -65,14 +76,14 @@ data ProximalSynapse  = ProximalSynapse  { pInput                :: Input
                                          }
 
 data Region           = Region           { columns               :: [Column]
-                                         , activeColumns         :: [Column]
                                          , desiredLocalActivity  :: LocalActivity
-                                         , inhibitionRadius      :: InhibitionRadius
+                                         , inhibitionRadius      :: InhibitionRadius --
                                          , minimumOverlap        :: Overlap
                                          , permanenceInc         :: Permanence
                                          , permanenceDec         :: Permanence
                                          , boostInc              :: Double
                                          , permanenceThreshold   :: Double
+                                         , dendriteThreshold     :: Int
                                          , operationMode         :: OperationMode
                                          , parallelismMode       :: ParallelismMode
                                          }
@@ -109,20 +120,26 @@ instance Eq Region where
         (a1 == b1)
         && (a2 == b2)
         && (a3 == b3)
-        && (a4 == b4)
+        && (abs (a4 - b4) <= 0.001)
         && (abs (a5 - b5) <= 0.001)
         && (abs (a6 - b6) <= 0.001)
         && (abs (a7 - b7) <= 0.001)
         && (abs (a8 - b8) <= 0.001)
-        && (abs (a9 - b9) <= 0.001)
+        && (a9 == b9)
         && (a10 == b10)
         && (a11 == b11)
 
 instance Eq Cell where
-    Cell a1 a2 == Cell b1 b2 = (a1 == b1) && (a2 == b2)
+    Cell a1 a2 a3== Cell b1 b2 b3 = (a1 == b1) && (a2 == b2) && (a3 == b3)
+
+instance Eq DistalDendrite where
+    DistalDendrite a1 a2 a3 == DistalDendrite b1 b2 b3 =
+        (a1 == b1)
+        && (a2 == b2)
+        && (a3 == b3)
 
 instance Eq OperationMode where
-    Compliant == Compliant=  True
+    Compliant == Compliant =  True
     Modified == Modified = True
     _ == _ = False
 
@@ -140,4 +157,9 @@ instance Eq CellState where
     ActiveCell == ActiveCell = True
     InactiveCell == InactiveCell = True
     PredictiveCell == PredictiveCell = True
+    _ == _ = False
+
+instance Eq DistalDendriteState where
+    ActiveDendrite == ActiveDendrite = True
+    InactiveDendrite == InactiveDendrite = True
     _ == _ = False
