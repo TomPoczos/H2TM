@@ -1,16 +1,16 @@
 module HtmData
-( CellState        (..)
-, ColumnState      (..)
-, SynapseState     (..)
-, Cell             (..)
-, DistalSynapse    (..)
-, ProximalSynapse  (..)
-, Input            (..)
-, Column           (..)
-, Region           (..)
-, OperationMode    (..)
-, DistalDendrite   (..)
-, DistalDendriteState (..)
+( CellState          (..)
+, ColumnState        (..)
+, SynapseState       (..)
+, Cell               (..)
+, DistalSynapse      (..)
+, ProximalSynapse    (..)
+, Input              (..)
+, Column             (..)
+, Region             (..)
+, DistalDendrite     (..)
+, ComplianceOption   (..)
+, ComplianceSettings (..)
 , Permanence
 , Boost
 , LocalActivity
@@ -32,11 +32,7 @@ type InhibitionRadius = Integer
 
 type Overlap          = Double
 
-data OperationMode    = Compliant | Modified
-
 data CellState        = ActiveCell | PredictiveCell | InactiveCell
-
-data DistalDendriteState = ActiveDendrite | InactiveDendrite
 
 data ColumnState      = ActiveColumn | InactiveColumn
 
@@ -44,49 +40,58 @@ data SynapseState     = Potential | Actual
 
 data Input            = On | Off
 
-data Cell             = Cell             { cellState             :: CellState
-                                         --, prevCellState         :: CellState
-                                         , distalDendrites       :: [DistalDendrite]
-                                         , permanence            :: Permanence
-                                         }
+data ComplianceOption = Compliant | Modified
 
-data Column           = Column           { cells                 :: [Cell]
-                                         , proximalSynapses      :: [ProximalSynapse]
-                                         , boost                 :: Double
-                                         , overlap               :: Overlap
-                                         , key                   :: Integer
-                                         , dutyCycles            :: CycleHistory
-                                         , overlapCycles         :: CycleHistory
-                                         , columnState           :: ColumnState
-                                         }
+data ComplianceSettings = ComplianceSettings { permanenceBoost      :: ComplianceOption
+                                             , cellLearnStateChange :: ComplianceOption
+                                             , activeSegmentChoice  :: ComplianceOption
+                                             }
 
-data DistalDendrite  = DistalDendrite    { distalSynapses        :: [DistalSynapse]
-                                         , sequenceSegment       :: Bool
-                                         , distalDendriteState   :: DistalDendriteState
-                                         }
+data Cell             = Cell                 { cellPredictiveState  :: Bool
+                                             , cellLearnState       :: Bool
+                                             , cellActiveState      :: Bool
+                                             , distalDendrites      :: [DistalDendrite]
+                                             }
 
-data DistalSynapse    = DistalSynapse    { dInput                :: Input
-                                         , dSynapseState         :: SynapseState
-                                         , dPermanence           :: Permanence
-                                         }
+data Column           = Column               { cells                :: [Cell]
+                                             , proximalSynapses     :: [ProximalSynapse]
+                                             , boost                :: Double
+                                             , overlap              :: Overlap
+                                             , key                  :: Integer
+                                             , dutyCycles           :: CycleHistory
+                                             , overlapCycles        :: CycleHistory
+                                             , columnState          :: ColumnState
+                                             }
 
-data ProximalSynapse  = ProximalSynapse  { pInput                :: Input
-                                         , pSynapseState         :: SynapseState
-                                         , pPermanence           :: Permanence
-                                         }
+data DistalDendrite  = DistalDendrite        { distalSynapses       :: [DistalSynapse]
+                                             , sequenceSegment      :: Bool
+                                             , dendrtiteActiveState :: Bool
+                                             , dendrtiteLearnState  :: Bool
+                                             }
 
-data Region           = Region           { columns               :: [Column]
-                                         , desiredLocalActivity  :: LocalActivity
-                                         , inhibitionRadius      :: InhibitionRadius --
-                                         , minimumOverlap        :: Overlap
-                                         , permanenceInc         :: Permanence
-                                         , permanenceDec         :: Permanence
-                                         , boostInc              :: Double
-                                         , permanenceThreshold   :: Double
-                                         , dendriteThreshold     :: Int
-                                         , operationMode         :: OperationMode
-                                         , parallelismMode       :: ParallelismMode
-                                         }
+data DistalSynapse    = DistalSynapse        { dInput               :: Input
+                                             , dSynapseState        :: SynapseState
+                                             , dPermanence          :: Permanence
+                                             }
+
+data ProximalSynapse  = ProximalSynapse      { pInput               :: Input
+                                             , pSynapseState        :: SynapseState
+                                             , pPermanence          :: Permanence
+                                             }
+
+data Region           = Region               { columns              :: [Column]
+                                             , desiredLocalActivity :: LocalActivity
+                                             , inhibitionRadius     :: InhibitionRadius --
+                                             , minimumOverlap       :: Overlap
+                                             , permanenceInc        :: Permanence
+                                             , permanenceDec        :: Permanence
+                                             , boostInc             :: Double
+                                             , permanenceThreshold  :: Double
+                                             , dendriteThreshold    :: Int
+                                             , complianceSettings   :: ComplianceSettings
+                                             , parallelismMode      :: ParallelismMode
+                                             , learningOn           :: Bool
+                                             }
 
 instance NFData Column
 
@@ -116,7 +121,7 @@ instance Eq Column where
         && (a8 == b8)
 
 instance Eq Region where
-    Region a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 == Region b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 =
+    Region a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 == Region b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 =
         (a1 == b1)
         && (a2 == b2)
         && (a3 == b3)
@@ -128,17 +133,29 @@ instance Eq Region where
         && (a9 == b9)
         && (a10 == b10)
         && (a11 == b11)
+        && (a12 == b12)
 
 instance Eq Cell where
-    Cell a1 a2 a3== Cell b1 b2 b3 = (a1 == b1) && (a2 == b2) && (a3 == b3)
+    Cell a1 a2 a3 a4 == Cell b1 b2 b3 b4 =
+        (a1 == b1)
+        && (a2 == b2)
+        && (a3 == b3)
+        && (a4 == b4)
 
 instance Eq DistalDendrite where
-    DistalDendrite a1 a2 a3 == DistalDendrite b1 b2 b3 =
+    DistalDendrite a1 a2 a3 a4 == DistalDendrite b1 b2 b3 b4 =
+        (a1 == b1)
+        && (a2 == b2)
+        && (a3 == b3)
+        && (a4 == b4)
+
+instance Eq ComplianceSettings where
+    ComplianceSettings a1 a2 a3 == ComplianceSettings b1 b2 b3 =
         (a1 == b1)
         && (a2 == b2)
         && (a3 == b3)
 
-instance Eq OperationMode where
+instance Eq ComplianceOption where
     Compliant == Compliant =  True
     Modified == Modified = True
     _ == _ = False
@@ -157,9 +174,4 @@ instance Eq CellState where
     ActiveCell == ActiveCell = True
     InactiveCell == InactiveCell = True
     PredictiveCell == PredictiveCell = True
-    _ == _ = False
-
-instance Eq DistalDendriteState where
-    ActiveDendrite == ActiveDendrite = True
-    InactiveDendrite == InactiveDendrite = True
     _ == _ = False
