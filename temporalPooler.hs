@@ -12,6 +12,12 @@ phase1 region column = if column |> columnPredictedInput
     then column |> Htm.cells |> map changeCellState
     else column |> Htm.cells |> map  (\cell -> cell {Htm.cellActiveState = True})
 
+
+    -- If the cell predicted the input its activeState is always set to True
+    -- If the dendrite segment selected to determine this is in learnState the cell's learnState is alsoset to true.
+    -- In noncompliant/modified mode if any of the 2 states cannot be set to true it is explicitly set to False.
+    -- These actions are not present in the pseudocode that the compliant version follows.
+
     where changeCellState :: Htm.Cell -> Htm.Cell
           changeCellState cell = case region |> Htm.complianceSettings |> Htm.cellLearnStateChange of
               Htm.Compliant -> if cell |> cellPredictedInput
@@ -23,7 +29,7 @@ phase1 region column = if column |> columnPredictedInput
                                    then if (region |> Htm.learningOn) && (cell |> isInputPredicted |> snd)
                                        then cell {Htm.cellActiveState = True, Htm.cellLearnState = True}
                                        else cell {Htm.cellActiveState = True, Htm.cellLearnState = False}
-                                   else cell {Htm.cellLearnState = False}
+                                   else cell {Htm.cellActiveState = False, Htm.cellLearnState = False}
 
           -- Returns True if any of the cell is in predictive state
           -- AND has at least one dendrite that is both active AND a sequence segment
@@ -47,7 +53,7 @@ phase1 region column = if column |> columnPredictedInput
           isInputPredicted :: Htm.Cell -> (Bool, Bool)
           isInputPredicted cell = case region |> Htm.complianceSettings |> Htm.activeSegmentChoice of
 
-              -- Checks if a dendrite exist that is active and sequenceSegment
+              -- Checks if a dendrite exists that is active and sequenceSegment
               -- if it finds such a segment and it is in learningstate it returns (True, True)
               -- if it finds such a segment and it is NOT in learningstate it returns (True, False)
               -- otherwise if it does not find such a segment it returns (False, False)
@@ -62,9 +68,9 @@ phase1 region column = if column |> columnPredictedInput
                                                        then (True, True)
                                                        else (True, False)
 
-              -- Checks if a dendrite exist that is active, sequenceSegment and in learningstate.
+              -- Checks if a dendrite exists that is active, sequenceSegment and in learningstate.
               -- returns (True, True) if it finds such a segment
-              -- Otherwise it checks if a dendrite exist that is active and sequenceSegment
+              -- Otherwise it checks if a dendrite exists that is active and sequenceSegment
               -- returns (True, False) if it finds such a segment
               -- Otherwise it returns (False, False)
 
