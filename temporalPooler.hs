@@ -15,12 +15,12 @@ phase1 region column = if column |> columnPredictedInput
     where changeCellState :: Htm.Cell -> Htm.Cell
           changeCellState cell = case region |> Htm.complianceSettings |> Htm.cellLearnStateChange of
               Htm.Compliant -> if cell |> cellPredictedInput
-                                   then if region |> Htm.learningOn
+                                   then if (region |> Htm.learningOn) && (cell |> isInputPredicted |> snd)
                                        then cell {Htm.cellActiveState = True, Htm.cellLearnState = True}
                                        else cell {Htm.cellActiveState = True}
                                    else cell
               Htm.Modified  -> if cell |> cellPredictedInput
-                                   then if region |> Htm.learningOn
+                                   then if (region |> Htm.learningOn) && (cell |> isInputPredicted |> snd)
                                        then cell {Htm.cellActiveState = True, Htm.cellLearnState = True}
                                        else cell {Htm.cellActiveState = True, Htm.cellLearnState = False}
                                    else cell {Htm.cellLearnState = False}
