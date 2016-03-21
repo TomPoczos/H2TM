@@ -45,6 +45,7 @@ data ComplianceOption = Compliant | Modified
 data ComplianceSettings = ComplianceSettings { permanenceBoost      :: ComplianceOption
                                              , cellLearnStateChange :: ComplianceOption
                                              , activeSegmentChoice  :: ComplianceOption
+                                             , boostDecrease        :: ComplianceOption
                                              }
 
 data Cell             = Cell                 { cellPredictiveState  :: Bool
@@ -150,10 +151,11 @@ instance Eq DistalDendrite where
         && (a4 == b4)
 
 instance Eq ComplianceSettings where
-    ComplianceSettings a1 a2 a3 == ComplianceSettings b1 b2 b3 =
+    ComplianceSettings a1 a2 a3 a4 == ComplianceSettings b1 b2 b3 b4 =
         (a1 == b1)
         && (a2 == b2)
         && (a3 == b3)
+        && (a4 == b4)
 
 instance Eq ComplianceOption where
     Compliant == Compliant =  True

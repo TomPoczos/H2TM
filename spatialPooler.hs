@@ -135,7 +135,9 @@ boostColumn region column = column {Htm.boost = updateBoost}
           updateBoost :: Double
           updateBoost =
             if (column |> Htm.dutyCycles |> Ch.activeCycle) > minDutyCycle
-                then 1
+                then case region |> Htm.complianceSettings |> Htm.boostDecrease of
+                    Htm.Compliant -> 1
+                    Htm.Modified  -> Htm.boost column - Htm.boostInc region
                 else Htm.boost column + Htm.boostInc region
 
           -- 1% of the highest DutyCycle of the column's neighbours' duty cycles
