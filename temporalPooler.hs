@@ -10,16 +10,26 @@ import qualified HtmData    as Htm
 phase1 :: Htm.Region -> Htm.Column -> [Htm.Cell]
 phase1 region column = if column |> columnPredictedInput
     then column |> Htm.cells |> map changeCellState
-    else column |> Htm.cells |> map  (\cell -> cell {Htm.cellActiveState = True})
+    else column |> Htm.cells |> map changeCellStateUnconditionally
 
 
-    -- If the cell predicted the input its activeState is always set to True
-    -- If the dendrite segment selected to determine this is in learnState the cell's learnState is alsoset to true.
-    -- In noncompliant/modified mode if any of the 2 states cannot be set to true it is explicitly set to False.
-    -- These actions are not present in the pseudocode that the compliant version follows.
 
-    where changeCellState :: Htm.Cell -> Htm.Cell
-          changeCellState cell = case region |> Htm.complianceSettings |> Htm.cellLearnStateChange of
+    where -- changes cell's active state to True unconditionally
+          -- changes cell's learn state to False in non-compliant mode
+
+          changeCellStateUnconditionally :: Htm.Cell -> Htm.Cell
+          changeCellStateUnconditionally cell =
+              case region |> Htm.complianceSettings |> Htm.resetToFalse of
+                  Htm.Compliant -> cell {Htm.cellActiveState = True}
+                  Htm.Modified  -> cell {Htm.cellActiveState = True, Htm.cellLearnState = False}
+
+          -- If the cell predicted the input its activeState is always set to True
+          -- If the dendrite segment selected to determine this is in learnState the cell's learnState is also set to true.
+          -- In noncompliant/modified mode if any of the 2 states cannot be set to true it is explicitly set to False.
+          -- These actions are not present in the pseudocode that the compliant version follows.
+
+          changeCellState :: Htm.Cell -> Htm.Cell
+          changeCellState cell = case region |> Htm.complianceSettings |> Htm.resetToFalse of
               Htm.Compliant -> if cell |> cellPredictedInput
                                    then if (region |> Htm.learningOn) && (cell |> isInputPredicted |> snd)
                                        then cell {Htm.cellActiveState = True, Htm.cellLearnState = True}
@@ -84,3 +94,11 @@ phase1 region column = if column |> columnPredictedInput
                                                          case dendriteThatPredictedInput of
                                                              Nothing -> (False, False)
                                                              Just _  -> (True, False)
+
+phase2 :: Htm.Region -> Htm.Column -> [Htm.Cell]
+phase2 region column = column |> Htm.cells |> map changePredictiveState
+    where changePredictiveState cell =
+            case region |> Htm.complianceSettings |> Htm.resetToFalse of
+                Htm.Compliant -> if cell |> Htm.distalDendrites |> any Htm.dendrtiteActiveState
+                                     then cell {Htm.cellPredictiveState = True}
+                                     else cell
