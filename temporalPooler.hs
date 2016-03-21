@@ -102,3 +102,6 @@ phase2 region column = column |> Htm.cells |> map changePredictiveState
                 Htm.Compliant -> if cell |> Htm.distalDendrites |> any Htm.dendrtiteActiveState
                                      then cell {Htm.cellPredictiveState = True}
                                      else cell
+                Htm.Modified  ->  if cell |> Htm.distalDendrites |> any Htm.dendrtiteActiveState
+                                     then cell {Htm.cellPredictiveState = True}
+                                     else cell {Htm.cellPredictiveState = False}
