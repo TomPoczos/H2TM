@@ -43,7 +43,7 @@ data Input            = On | Off
 data ComplianceOption = Compliant | Modified
 
 data ComplianceSettings = ComplianceSettings { permanenceBoost      :: ComplianceOption
-                                             , cellLearnStateChange :: ComplianceOption
+                                             , resetToFalse         :: ComplianceOption
                                              , activeSegmentChoice  :: ComplianceOption
                                              , boostDecrease        :: ComplianceOption
                                              }
