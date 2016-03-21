@@ -7,10 +7,10 @@ import           Data.List
 import           Flow
 import qualified HtmData    as Htm
 
-phase1 :: Htm.Region -> Htm.Column -> [Htm.Cell]
+phase1 :: Htm.Region -> Htm.Column -> Htm.Column
 phase1 region column = if column |> columnPredictedInput
-    then column |> Htm.cells |> map changeCellState
-    else column |> Htm.cells |> map changeCellStateUnconditionally
+    then column { Htm.cells = column |> Htm.cells |> map changeCellState}
+    else column { Htm.cells = column |> Htm.cells |> map changeCellStateUnconditionally}
 
 
 
