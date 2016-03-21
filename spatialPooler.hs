@@ -148,7 +148,7 @@ boostColumn region column = column {Htm.boost = updateBoost}
 boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 boostPermanences region column = column {Htm.proximalSynapses = increasePermanences}
     where increasePermanences :: [Htm.ProximalSynapse]
-          increasePermanences = case Htm.operationMode region of
+          increasePermanences = case region |> Htm.complianceSettings |> Htm.permanenceBoost of
               Htm.Compliant -> if (column |> Htm.overlapCycles |> Ch.activeCycle) < minDutyCycle
                                    then Htm.proximalSynapses column |> map increasePermanence
                                    else Htm.proximalSynapses column
