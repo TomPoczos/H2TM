@@ -41,9 +41,7 @@ phase1 region column = if column |> columnPredictedInput
           -- AND has at least one dendrite that is both active AND a sequence segment
 
           columnPredictedInput :: Htm.Column -> Bool
-          columnPredictedInput col = case  col |> Htm.cells |> find cellPredictedInput of
-              Nothing -> False
-              _       -> True
+          columnPredictedInput col = col |> Htm.cells |> any cellPredictedInput
 
           -- returns 2 bools
           -- the first one indicates whether any segment predicted the input
