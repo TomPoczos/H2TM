@@ -3,7 +3,6 @@ module TemporalPooler
 ) where
 
 import           Data.List
--- import           Data.Maybe
 import           Flow
 import           FlexibleParallelism
 import qualified HtmData    as Htm
@@ -134,8 +133,8 @@ phase2 region column = column { Htm.cells = column |> Htm.cells |> map changePre
               cell |> Htm.distalDendrites
                    |> concatMap Htm.distalSynapses
                    |> filter (\ds -> case time of
-                                        Htm.Current -> Htm.dSynapseState ds == Htm.Actual && (ds |> Htm.dOriginatingCell |> Htm.cellActiveState)
-                                        Htm.Prev    -> Htm.dSynapseState ds == Htm.Actual && (ds |> Htm.dOriginatingCell |> Htm.cellPrevActiveState))
+                          Htm.Current -> Htm.dSynapseState ds == Htm.Actual && (ds |> Htm.dOriginatingCell |> Htm.cellActiveState)
+                          Htm.Prev    -> Htm.dSynapseState ds == Htm.Actual && (ds |> Htm.dOriginatingCell |> Htm.cellPrevActiveState))
 
           getBestMatchingSegment :: Htm.AcquisitionTime -> Htm.Cell -> Maybe Htm.DistalDendrite
           getBestMatchingSegment time cell =
@@ -169,6 +168,6 @@ phase3 region column =
                     then if synapse `elem` Htm.queuedDistalSynapses cell
                         then synapse {Htm.dPermanence = Htm.dPermanence synapse + Htm.permanenceInc region}
                         else synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region}
-                    else if not $ Htm.cellPredictiveState cell && Htm.cellPrevPredictiveState cell
+                    else if not $ Htm.cellPredictiveState cell && Htm.cellPrevPredictiveState cell && synapse `elem` Htm.queuedDistalSynapses cell
                         then synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region}
                         else synapse)})})}
