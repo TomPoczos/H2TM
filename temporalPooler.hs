@@ -11,9 +11,10 @@ temporalPooler :: Htm.Region -> Htm.Region
 temporalPooler region = region {Htm.columns = runTemporalPooler}
     where runTemporalPooler :: [Htm.Column]
           runTemporalPooler = Htm.columns region
-              |> flexibleParMap (Htm.parallelismMode region) (phase1 region)
-              |> flexibleParMap (Htm.parallelismMode region) (phase2 region)
-              |> flexibleParMap (Htm.parallelismMode region) (phase3 region)
+              |> flexibleParMap (Htm.parallelismMode region) (phase1              region)
+              |> flexibleParMap (Htm.parallelismMode region) (phase2              region)
+              |> flexibleParMap (Htm.parallelismMode region) (phase3              region)
+              |> flexibleParMap (Htm.parallelismMode region) (resetQueuedSynapses region)
 
 phase1 :: Htm.Region -> Htm.Column -> Htm.Column
 phase1 region column = if column |> columnPredictedInput
@@ -152,12 +153,13 @@ phase2 region column = column { Htm.cells = column |> Htm.cells |> map changePre
               | getNumOfActiveSynapses time col1 == getNumOfActiveSynapses time col2 = EQ
 
 
-          getNumOfActiveSynapses time col = col |> Htm.distalSynapses
-                                |> map (\synapse -> case time of
-                                                       Htm.Current -> Htm.dSynapseState synapse
-                                                       Htm.Prev    -> Htm.dPrevSynapseState synapse)
-                                |> filter (== Htm.Actual)
-                                |> length
+          getNumOfActiveSynapses time col = col
+              |> Htm.distalSynapses
+              |> map (\synapse -> case time of
+                     Htm.Current -> Htm.dSynapseState synapse
+                     Htm.Prev    -> Htm.dPrevSynapseState synapse)
+              |> filter (== Htm.Actual)
+              |> length
 
 phase3 :: Htm.Region -> Htm.Column -> Htm.Column
 phase3 region column =
@@ -171,3 +173,8 @@ phase3 region column =
                     else if not $ Htm.cellPredictiveState cell && Htm.cellPrevPredictiveState cell && synapse `elem` Htm.queuedDistalSynapses cell
                         then synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region}
                         else synapse)})})}
+
+resetQueuedSynapses ::Htm.Region -> Htm.Column -> Htm.Column
+resetQueuedSynapses region column =
+    column { Htm.cells = column |> Htm.cells |> map (\cell ->
+        cell {Htm.queuedDistalSynapses = []})}
