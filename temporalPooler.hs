@@ -1,11 +1,20 @@
 module TemporalPooler
-( phase1
+( temporalPooler
 ) where
 
 import           Data.List
 -- import           Data.Maybe
 import           Flow
+import           FlexibleParallelism
 import qualified HtmData    as Htm
+
+temporalPooler :: Htm.Region -> Htm.Region
+temporalPooler region = region {Htm.columns = runTemporalPooler}
+    where runTemporalPooler :: [Htm.Column]
+          runTemporalPooler = Htm.columns region
+              |> flexibleParMap (Htm.parallelismMode region) (phase1 region)
+              |> flexibleParMap (Htm.parallelismMode region) (phase2 region)
+              |> flexibleParMap (Htm.parallelismMode region) (phase3 region)
 
 phase1 :: Htm.Region -> Htm.Column -> Htm.Column
 phase1 region column = if column |> columnPredictedInput
