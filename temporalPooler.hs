@@ -68,7 +68,7 @@ phase1 region column = if column |> columnPredictedInput
 
               Htm.Compliant ->
                   cell |> Htm.distalDendrites
-                       |> find (\dd -> Htm.dendrtiteActiveState dd && Htm.sequenceSegment dd)
+                       |> find (\dd -> Htm.dendriteActiveState dd && Htm.sequenceSegment dd)
                        |> \dendriteThatPredictedInput ->
                               case dendriteThatPredictedInput of
                                   Nothing       -> (False, False)
@@ -84,12 +84,12 @@ phase1 region column = if column |> columnPredictedInput
 
               Htm.Modified  ->
                   cell |> Htm.distalDendrites
-                       |> find (\dd -> Htm.dendrtiteActiveState dd && Htm.sequenceSegment dd && Htm.dendrtiteLearnState dd)
+                       |> find (\dd -> Htm.dendriteActiveState dd && Htm.sequenceSegment dd && Htm.dendrtiteLearnState dd)
                        |> \dendriteThatPredictedInputWithLearnState ->
                               case dendriteThatPredictedInputWithLearnState of
                                   Just _  -> (True, True)
                                   Nothing -> cell |> Htm.distalDendrites
-                                                  |> find (\dd -> Htm.dendrtiteActiveState dd && Htm.sequenceSegment dd)
+                                                  |> find (\dd -> Htm.dendriteActiveState dd && Htm.sequenceSegment dd)
                                                   |> \dendriteThatPredictedInput ->
                                                          case dendriteThatPredictedInput of
                                                              Nothing -> (False, False)
@@ -98,10 +98,68 @@ phase1 region column = if column |> columnPredictedInput
 phase2 :: Htm.Region -> Htm.Column -> [Htm.Cell]
 phase2 region column = column |> Htm.cells |> map changePredictiveState
     where changePredictiveState cell =
-            case region |> Htm.complianceSettings |> Htm.resetToFalse of
-                Htm.Compliant -> if cell |> Htm.distalDendrites |> any Htm.dendrtiteActiveState
-                                     then cell {Htm.cellPredictiveState = True}
-                                     else cell
-                Htm.Modified  ->  if cell |> Htm.distalDendrites |> any Htm.dendrtiteActiveState
-                                     then cell {Htm.cellPredictiveState = True}
-                                     else cell {Htm.cellPredictiveState = False}
+              if region |> Htm.learningOn
+                  then case region |> Htm.complianceSettings |> Htm.resetToFalse of
+                      Htm.Compliant -> if cell |> Htm.distalDendrites |> any Htm.dendriteActiveState
+                                           then cell {Htm.cellPredictiveState = True} |> queueReinforcements
+                                           else cell |> queueReinforcements
+                      Htm.Modified  ->  if cell |> Htm.distalDendrites |> any Htm.dendriteActiveState
+                                           then cell {Htm.cellPredictiveState = True} |> queueReinforcements
+                                           else cell {Htm.cellPredictiveState = False} |> queueReinforcements
+                  else case region |> Htm.complianceSettings |> Htm.resetToFalse of
+                      Htm.Compliant -> if cell |> Htm.distalDendrites |> any Htm.dendriteActiveState
+                                           then cell {Htm.cellPredictiveState = True}
+                                           else cell
+                      Htm.Modified  -> if cell |> Htm.distalDendrites |> any Htm.dendriteActiveState
+                                           then cell {Htm.cellPredictiveState = True}
+                                           else cell {Htm.cellPredictiveState = False}
+
+          queueReinforcements :: Htm.Cell -> Htm.Cell
+          queueReinforcements cell =
+              case getBestMatchingSegment Htm.Prev cell of
+                  Nothing       -> cell {Htm.queuedDistalSynapses = selectActive Htm.Current cell}
+                  Just dendrite -> cell {Htm.queuedDistalSynapses = selectActive Htm.Current cell ++ Htm.distalSynapses dendrite}
+
+          selectActive :: Htm.AcquisitionTime -> Htm.Cell -> [Htm.DistalSynapse]
+          selectActive time cell =
+              cell |> Htm.distalDendrites
+                   |> concatMap Htm.distalSynapses
+                   |> filter (\ds -> case time of
+                                        Htm.Current -> Htm.dSynapseState ds == Htm.Actual && (ds |> Htm.dOriginatingCell |> Htm.cellActiveState)
+                                        Htm.Prev    -> Htm.dSynapseState ds == Htm.Actual && (ds |> Htm.dOriginatingCell |> Htm.cellPrevActiveState))
+
+          getBestMatchingSegment :: Htm.AcquisitionTime -> Htm.Cell -> Maybe Htm.DistalDendrite
+          getBestMatchingSegment time cell =
+             if (getSegmentWithMostActiveSynapses time cell |> getNumOfActiveSynapses time) < Htm.dendriteMinThreshold region
+                 then Nothing
+                 else Just (getSegmentWithMostActiveSynapses time cell)
+
+          getSegmentWithMostActiveSynapses time col =
+             col |> Htm.distalDendrites |> maximumBy (compareByActiveSynapses time)
+
+
+          compareByActiveSynapses time col1 col2
+              | getNumOfActiveSynapses time col1 > getNumOfActiveSynapses time col2 = GT
+              | getNumOfActiveSynapses time col1 < getNumOfActiveSynapses time col2 = LT
+              | getNumOfActiveSynapses time col1 == getNumOfActiveSynapses time col2 = EQ
+
+
+          getNumOfActiveSynapses time col = col |> Htm.distalSynapses
+                                |> map (\synapse -> case time of
+                                                       Htm.Current -> Htm.dSynapseState synapse
+                                                       Htm.Prev    -> Htm.dPrevSynapseState synapse)
+                                |> filter (== Htm.Actual)
+                                |> length
+
+phase3 :: Htm.Region -> Htm.Column -> Htm.Column
+phase3 region column =
+    column { Htm.cells = column |> Htm.cells |> map (\cell ->
+        cell { Htm.distalDendrites = Htm.distalDendrites cell |> map (\dd ->
+            dd { Htm.distalSynapses = dd |> Htm.distalSynapses |> map (\ds ->
+                if Htm.cellLearnState cell
+                    then if ds `elem` Htm.queuedDistalSynapses cell
+                        then ds {Htm.dPermanence = Htm.dPermanence ds + Htm.permanenceInc region}
+                        else ds {Htm.dPermanence = Htm.dPermanence ds - Htm.permanenceDec region}
+                    else if not $ Htm.cellPredictiveState cell && Htm.cellPrevPredictiveState cell
+                        then ds {Htm.dPermanence = Htm.dPermanence ds - Htm.permanenceDec region}
+                        else ds)})})}
