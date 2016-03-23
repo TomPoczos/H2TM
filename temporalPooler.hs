@@ -11,10 +11,10 @@ temporalPooler :: Htm.Region -> Htm.Region
 temporalPooler region = region {Htm.columns = runTemporalPooler}
     where runTemporalPooler :: [Htm.Column]
           runTemporalPooler = Htm.columns region
-              |> flexibleParMap (Htm.parallelismMode region) (phase1              region)
-              |> flexibleParMap (Htm.parallelismMode region) (phase2              region)
-              |> flexibleParMap (Htm.parallelismMode region) (phase3              region)
-              |> flexibleParMap (Htm.parallelismMode region) (resetQueuedSynapses region)
+              |> flexibleParMap (Htm.parallelismMode region) (phase1 region)
+              |> flexibleParMap (Htm.parallelismMode region) (phase2 region)
+              |> flexibleParMap (Htm.parallelismMode region) (phase3 region)
+              |> flexibleParMap (Htm.parallelismMode region) resetQueuedSynapses
 
 phase1 :: Htm.Region -> Htm.Column -> Htm.Column
 phase1 region column = if column |> columnPredictedInput
@@ -174,7 +174,7 @@ phase3 region column =
                         then synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region}
                         else synapse)})})}
 
-resetQueuedSynapses ::Htm.Region -> Htm.Column -> Htm.Column
-resetQueuedSynapses region column =
+resetQueuedSynapses :: Htm.Column -> Htm.Column
+resetQueuedSynapses column =
     column { Htm.cells = column |> Htm.cells |> map (\cell ->
         cell {Htm.queuedDistalSynapses = []})}
