@@ -163,12 +163,12 @@ phase2 region column = column { Htm.cells = column |> Htm.cells |> map changePre
 phase3 :: Htm.Region -> Htm.Column -> Htm.Column
 phase3 region column =
     column { Htm.cells = column |> Htm.cells |> map (\cell ->
-        cell { Htm.distalDendrites = Htm.distalDendrites cell |> map (\dd ->
-            dd { Htm.distalSynapses = dd |> Htm.distalSynapses |> map (\ds ->
+        cell { Htm.distalDendrites = Htm.distalDendrites cell |> map (\dendrite ->
+            dendrite { Htm.distalSynapses = dendrite |> Htm.distalSynapses |> map (\synapse ->
                 if Htm.cellLearnState cell
-                    then if ds `elem` Htm.queuedDistalSynapses cell
-                        then ds {Htm.dPermanence = Htm.dPermanence ds + Htm.permanenceInc region}
-                        else ds {Htm.dPermanence = Htm.dPermanence ds - Htm.permanenceDec region}
+                    then if synapse `elem` Htm.queuedDistalSynapses cell
+                        then synapse {Htm.dPermanence = Htm.dPermanence synapse + Htm.permanenceInc region}
+                        else synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region}
                     else if not $ Htm.cellPredictiveState cell && Htm.cellPrevPredictiveState cell
-                        then ds {Htm.dPermanence = Htm.dPermanence ds - Htm.permanenceDec region}
-                        else ds)})})}
+                        then synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region}
+                        else synapse)})})}
