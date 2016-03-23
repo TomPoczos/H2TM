@@ -95,8 +95,8 @@ phase1 region column = if column |> columnPredictedInput
                                                              Nothing -> (False, False)
                                                              Just _  -> (True, False)
 
-phase2 :: Htm.Region -> Htm.Column -> [Htm.Cell]
-phase2 region column = column |> Htm.cells |> map changePredictiveState
+phase2 :: Htm.Region -> Htm.Column -> Htm.Column
+phase2 region column = column { Htm.cells = column |> Htm.cells |> map changePredictiveState}
     where changePredictiveState cell =
               if region |> Htm.learningOn
                   then case region |> Htm.complianceSettings |> Htm.resetToFalse of
