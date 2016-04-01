@@ -90,7 +90,7 @@ data ProximalSynapse  = ProximalSynapse      { pInput                  :: Input
 
 data Region           = Region               { columns                 :: [Column]
                                              , desiredLocalActivity    :: LocalActivity
-                                             , inhibitionRadius        :: InhibitionRadius --
+                                             , inhibitionRadius        :: InhibitionRadius
                                              , minimumOverlap          :: Overlap
                                              , permanenceInc           :: Permanence
                                              , permanenceDec           :: Permanence
