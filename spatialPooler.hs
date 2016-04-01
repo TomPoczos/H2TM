@@ -14,6 +14,12 @@ import qualified HtmData      as Htm
 
 spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region = region {Htm.columns = runSpatialPooler}
+    |> \r -> r {Htm.inhibitionRadius = newRadius r}
+
+    -- Done in 2 steps to ensure inhibition radius is calculated after everything else
+    -- the spatial pooler has to perform has been done. This could probably be done in
+    -- one step but it is better to be on the safe side
+
     where runSpatialPooler :: [Htm.Column]
           runSpatialPooler = Htm.columns region
               |> flexibleParMap (Htm.parallelismMode region) (region |> Htm.minimumOverlap |> updateOverlap)
@@ -21,7 +27,36 @@ spatialPooler region = region {Htm.columns = runSpatialPooler}
               |> flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
               |> flexibleParMap (Htm.parallelismMode region) (boostColumn region)
               |> flexibleParMap (Htm.parallelismMode region) (boostPermanences region)
-    --
+
+-- Calculates the nwe inhibition radius for the region. Based on Numenta's Matlab
+-- implementation rather than the description in Numenta's HTM paper 
+
+newRadius :: Htm.Region -> Integer
+newRadius region = (numOfRegionsActiveSynapses / numOfRegionsSynapses) * numOfRegionsInputs
+    |> round
+    |> min (((region |> Htm.columns |> length) - 1) |> toInteger)
+
+    where numOfRegionsActiveSynapses :: Double
+          numOfRegionsActiveSynapses = region |> Htm.columns
+                                              |> concatMap Htm.proximalSynapses
+                                              |> map Htm.pSynapseState
+                                              |> filter (== Htm.Actual)
+                                              |> length
+                                              |> fromIntegral :: Double
+
+          numOfRegionsSynapses       :: Double
+          numOfRegionsSynapses       = region |> Htm.columns
+                                              |> concatMap Htm.proximalSynapses
+                                              |> length
+                                              |> fromIntegral :: Double
+
+          numOfRegionsInputs         :: Double
+          numOfRegionsInputs         = region |> Htm.columns
+                                              |> concatMap Htm.proximalSynapses
+                                              |> map Htm.pInput
+                                              |> filter (== Htm.On)
+                                              |> length
+                                              |> fromIntegral :: Double
 
 -- PHASE 1: OVERLAP
 -- The number of distal synapses with that ar active AND connected to the column
