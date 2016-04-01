@@ -83,8 +83,6 @@ newRadius region = (numOfRegionsActiveSynapses / numOfRegionsSynapses) * numOfRe
                                               |> fromIntegral :: Double
 
 -- PHASE 1: OVERLAP
--- The number of distal synapses with that ar active AND connected to the column
--- multiplied by the column's boost value
 
 updateOverlap :: Htm.Overlap -> Htm.Column -> Htm.Column
 updateOverlap minOverlap column =
