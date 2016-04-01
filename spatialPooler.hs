@@ -16,9 +16,9 @@ spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region = region {Htm.columns = runSpatialPooler}
     |> \r -> r {Htm.inhibitionRadius = newRadius r}
 
-    -- Done in 2 steps to ensure inhibition radius is calculated after everything else
-    -- the spatial pooler has to perform has been done. This could probably be done in
-    -- one step but it is better to be on the safe side
+    -- The above is done in 2 steps to ensure inhibition radius is calculated
+    -- after everything else the spatial pooler has to perform has been done.
+    -- This could probably be done in one step but it is better to be on the safe side
 
     where runSpatialPooler :: [Htm.Column]
           runSpatialPooler = Htm.columns region
@@ -29,12 +29,12 @@ spatialPooler region = region {Htm.columns = runSpatialPooler}
               |> flexibleParMap (Htm.parallelismMode region) (boostPermanences region)
 
 -- Calculates the nwe inhibition radius for the region. Based on Numenta's Matlab
--- implementation rather than the description in Numenta's HTM paper 
+-- implementation rather than the description in Numenta's HTM paper
 
 newRadius :: Htm.Region -> Integer
 newRadius region = (numOfRegionsActiveSynapses / numOfRegionsSynapses) * numOfRegionsInputs
     |> round
-    |> min (((region |> Htm.columns |> length) - 1) |> toInteger)
+    |> min ((region |> Htm.columns |> length) - 1 |> toInteger)
 
     where numOfRegionsActiveSynapses :: Double
           numOfRegionsActiveSynapses = region |> Htm.columns
