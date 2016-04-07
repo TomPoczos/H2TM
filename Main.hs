@@ -25,13 +25,14 @@ along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 module Main where
 
 import           Data.List
-import qualified Data.Text as Text
+import qualified Data.Text           as Text
 import           Data.Tuple.Select
 import           FlexibleParallelism
 import           Flow
 import qualified HtmData             as Htm
 import           HtmInit
 import           System.IO
+import           System.Random
 
 main :: IO ()
 main = do
@@ -41,10 +42,11 @@ main = do
     hClose instrHandle
     settingsPath   <- getLine
     settings       <- readFile settingsPath
-    region         <- settings |> lines |> setup |> sel1 |> return
-    learning       <- settings |> lines |> setup |> sel2 |> return
-    trainingFileH  <- settings |> lines |> setup |> sel3 |> flip openFile ReadMode
-    testingFileH   <- settings |> lines |> setup |> sel4 |> flip openFile ReadMode
+    stdGen         <- newStdGen
+    region         <- settings |> lines |> setup stdGen |> sel1 |> return
+    learning       <- settings |> lines |> setup stdGen |> sel2 |> return
+    trainingFileH  <- settings |> lines |> setup stdGen |> sel3 |> flip openFile ReadMode
+    testingFileH   <- settings |> lines |> setup stdGen |> sel4 |> flip openFile ReadMode
     trainingString <- hGetContents trainingFileH
     trainingData   <- processData trainingString |> return
 
@@ -55,11 +57,13 @@ main = do
     putStr settings
     hClose trainingFileH
     --cols <- hGetLine :: Integer settings
-
+{-
 trainRegion :: Htm.Region -> [[Htm.Input]] -> Htm.Region
-trainRegion region input =
-    input map (\timePoint -> region )
+trainRegion region (input = runTimeStep region input
+    where runTimeStep r (timeStep:timesteps) =
 
+          feedInput singleInput column = column {htm.}
+-}
 processData :: String -> [[Htm.Input]]
 processData dataString =
     dataString |> Text.pack
@@ -70,8 +74,8 @@ processData dataString =
                               "1" -> Htm.On
                               "0" -> Htm.Off))
 
-setup :: [String] -> (Htm.Region, Bool, String, String)
-setup (cols:cells:psyn:dDend:dSyn:permThreshold:learning:permCompl:boostComp:parallelism:trainingFile:testingFile:[]) =
+setup :: StdGen -> [String] -> (Htm.Region, Bool, String, String)
+setup stdGen (cols:cells:psyn:dDend:dSyn:permThreshold:learning:permCompl:boostComp:parallelism:trainingFile:testingFile:[]) =
     case learning of
         "True"  -> (createInitialRegion, True, trainingFile, testingFile)
         "False" -> (createInitialRegion, False, trainingFile, testingFile)
@@ -85,6 +89,7 @@ setup (cols:cells:psyn:dDend:dSyn:permThreshold:learning:permCompl:boostComp:par
                 (readComplianceOption permCompl)
                 (readComplianceOption boostComp)
                 (readParallelismMode parallelism)
+                stdGen
 
           readComplianceOption :: String -> Htm.ComplianceOption
           readComplianceOption "Compliant" = Htm.Compliant

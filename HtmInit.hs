@@ -30,7 +30,6 @@ import           Data.Maybe
 import           FlexibleParallelism
 import           Flow
 import qualified HtmData             as Htm
-import           System.IO.Unsafe
 import           System.Random
 
 -- always initialised with learning on, which is necessary for training
@@ -45,9 +44,11 @@ htmInit :: Integer              -- number of columns
         -> Htm.ComplianceOption -- mode of icrease all permanences in SP phase 3
         -> Htm.ComplianceOption -- mode of decerasing boost value in SP phase 3
         -> ParallelismMode
+        -> StdGen
         -> Htm.Region
 
-htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCompliance boostDecCompliance parallelism
+
+htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCompliance boostDecCompliance parallelism stdGen
                                    = Htm.Region             { Htm.columns                     = [1..columns] |> map createColumns
                                                             , Htm.desiredLocalActivity        = 0
                                                             , Htm.inhibitionRadius            = 0
@@ -114,11 +115,11 @@ htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCom
 
           getRndDouble :: Double -> Double -> Double
           getRndDouble minVal maxVal =
-              head $ randomRs (minVal, maxVal) (unsafePerformIO newStdGen)
+              head $ randomRs (minVal, maxVal) stdGen
 
           getRndInteger :: [Int] -> Int -> Int -> Int
           getRndInteger disallowed minVal maxVal =  getRnd |> (\x ->
               case () of
                   _ | x `notElem` disallowed -> x
                     | otherwise              -> getRnd)
-              where getRnd = head $ randomRs (minVal, maxVal) (unsafePerformIO newStdGen)
+              where getRnd = head $ randomRs (minVal, maxVal) stdGen
