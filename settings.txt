@@ -1,0 +1,10 @@
+400
+5
+50
+50
+20
+1.2
+True
+Modified
+Modified
+Agressive
