@@ -25,6 +25,8 @@ along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 module Main where
 
 import           Data.List
+import qualified Data.Text as Text
+import           Data.Tuple.Select
 import           FlexibleParallelism
 import           Flow
 import qualified HtmData             as Htm
@@ -33,28 +35,66 @@ import           System.IO
 
 main :: IO ()
 main = do
-    instrHandle <- openFile "instructions.txt" ReadMode
-    instrContent <- hGetContents instrHandle
+    instrHandle    <- openFile "instructions.txt" ReadMode
+    instrContent   <- hGetContents instrHandle
     putStrLn instrContent
     hClose instrHandle
-    settingsPath <- getLine
-    settings <- readFile settingsPath
+    settingsPath   <- getLine
+    settings       <- readFile settingsPath
+    region         <- settings |> lines |> setup |> sel1 |> return
+    learning       <- settings |> lines |> setup |> sel2 |> return
+    trainingFileH  <- settings |> lines |> setup |> sel3 |> flip openFile ReadMode
+    testingFileH   <- settings |> lines |> setup |> sel4 |> flip openFile ReadMode
+    trainingString <- hGetContents trainingFileH
+    trainingData   <- processData trainingString |> return
+
+    -- trainingData <- processData trainingString
+
 
 
     putStr settings
-
+    hClose trainingFileH
     --cols <- hGetLine :: Integer settings
 
-initRegion :: [String] -> Htm.Region
-initRegion (cols:cells:psyn:dDend:dSyn:permThreshold:learning:permCompl:boostComp:parallelism) =
-    htmInit (read cols :: Integer)
-            (read cells :: Integer)
-            (read psyn :: Integer)
-            (read dDend :: Integer)
-            (read dSyn :: Integer)
-            (read permThreshold :: Double)
-            (readComplianceOption permCompl)
-            (readComplianceOption boostComp)
-            (readParallelismMode parallelism)
-    where readComplianceOption "Compliant" = Htm.Compliant
+trainRegion :: Htm.Region -> [[Htm.Input]] -> Htm.Region
+trainRegion region input =
+    input map (\timePoint -> region )
+
+processData :: String -> [[Htm.Input]]
+processData dataString =
+    dataString |> Text.pack
+               |> Text.lines
+               |> map (Text.splitOn (Text.pack ","))
+               |> map (map (\element ->
+                          case Text.unpack element of
+                              "1" -> Htm.On
+                              "0" -> Htm.Off))
+
+setup :: [String] -> (Htm.Region, Bool, String, String)
+setup (cols:cells:psyn:dDend:dSyn:permThreshold:learning:permCompl:boostComp:parallelism:trainingFile:testingFile:[]) =
+    case learning of
+        "True"  -> (createInitialRegion, True, trainingFile, testingFile)
+        "False" -> (createInitialRegion, False, trainingFile, testingFile)
+
+    where createInitialRegion = htmInit (read cols :: Integer)
+                (read cells :: Integer)
+                (read psyn :: Integer)
+                (read dDend :: Integer)
+                (read dSyn :: Integer)
+                (read permThreshold :: Double)
+                (readComplianceOption permCompl)
+                (readComplianceOption boostComp)
+                (readParallelismMode parallelism)
+
+          readComplianceOption :: String -> Htm.ComplianceOption
+          readComplianceOption "Compliant" = Htm.Compliant
           readComplianceOption "Modified"  = Htm.Modified
+
+          readParallelismMode :: String -> ParallelismMode
+          readParallelismMode "None" = None
+          readParallelismMode "Agressive" = Agressive
+          readParallelismMode numOfThreads = Limited (read numOfThreads :: Int)
+
+          readLearningMode :: String -> Bool
+          readLearningMode "True" = True
+          readLearningMode "False" = False
