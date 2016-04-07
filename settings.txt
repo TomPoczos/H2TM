@@ -8,3 +8,5 @@ True
 Modified
 Modified
 Agressive
+trainingset.csv
+testingset.csv
