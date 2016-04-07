@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 H2TM: A Haskell HTM/CLA Implementation
-Copyright (C) 2015-2016, Tom Poczos
+Copyright (C) 2016, Tom Poczos
 
 Developed as part of a Final Year Project at Staffordshire University,
 United Kingdom by Tom Poczos under the supervision of Dr. Mohamed Sedky,
@@ -19,7 +19,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/agpl-3.0
+along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 -------------------------------------------------------------------------------}
 
 module HtmData
@@ -43,9 +43,9 @@ module HtmData
 , Overlap
 ) where
 
-import CycleHistory
-import FlexibleParallelism
-import Control.DeepSeq
+import           Control.DeepSeq
+import           CycleHistory
+import           FlexibleParallelism
 
 type Permanence       = Double
 
@@ -69,47 +69,47 @@ data Input            = On | Off
 
 data ComplianceOption = Compliant | Modified
 
-data ComplianceSettings = ComplianceSettings { permanenceBoost             :: ComplianceOption
-                                             , resetToFalse                :: ComplianceOption
-                                             , activeSegmentChoice         :: ComplianceOption
-                                             , boostDecrease               :: ComplianceOption
+data ComplianceSettings = ComplianceSettings { permanenceBoost     :: ComplianceOption
+                                             , resetToFalse        :: ComplianceOption
+                                             , activeSegmentChoice :: ComplianceOption
+                                             , boostDecrease       :: ComplianceOption
                                              }
 
-data Cell             = Cell                 { cellPredictiveState         :: Bool
-                                             , cellLearnState              :: Bool
-                                             , cellActiveState             :: Bool
-                                             , cellPrevActiveState         :: Bool
-                                             , cellPrevPredictiveState     :: Bool
-                                             , distalDendrites             :: [DistalDendrite]
-                                             , queuedDistalSynapses        :: [DistalSynapse]
+data Cell             = Cell                 { cellPredictiveState     :: Bool
+                                             , cellLearnState          :: Bool
+                                             , cellActiveState         :: Bool
+                                             , cellPrevActiveState     :: Bool
+                                             , cellPrevPredictiveState :: Bool
+                                             , distalDendrites         :: [DistalDendrite]
+                                             , queuedDistalSynapses    :: [DistalSynapse]
                                              }
 
-data Column           = Column               { cells                       :: [Cell]
-                                             , proximalSynapses            :: [ProximalSynapse]
-                                             , boost                       :: Double
-                                             , overlap                     :: Overlap
-                                             , key                         :: Integer
-                                             , dutyCycles                  :: CycleHistory
-                                             , overlapCycles               :: CycleHistory
-                                             , columnState                 :: ColumnState
+data Column           = Column               { cells            :: [Cell]
+                                             , proximalSynapses :: [ProximalSynapse]
+                                             , boost            :: Double
+                                             , overlap          :: Overlap
+                                             , key              :: Integer
+                                             , dutyCycles       :: CycleHistory
+                                             , overlapCycles    :: CycleHistory
+                                             , columnState      :: ColumnState
                                              }
 
-data DistalDendrite  = DistalDendrite        { distalSynapses              :: [DistalSynapse]
-                                             , sequenceSegment             :: Bool
-                                             , dendriteActiveState         :: Bool
-                                             , dendrtiteLearnState         :: Bool
+data DistalDendrite  = DistalDendrite        { distalSynapses      :: [DistalSynapse]
+                                             , sequenceSegment     :: Bool
+                                             , dendriteActiveState :: Bool
+                                             , dendrtiteLearnState :: Bool
                                              }
 
-data DistalSynapse    = DistalSynapse        { dInput                      :: Input
-                                             , dSynapseState               :: SynapseState
-                                             , dPrevSynapseState           :: SynapseState
-                                             , dPermanence                 :: Permanence
-                                             , dOriginatingCell            :: Cell
+data DistalSynapse    = DistalSynapse        { dInput            :: Input
+                                             , dSynapseState     :: SynapseState
+                                             , dPrevSynapseState :: SynapseState
+                                             , dPermanence       :: Permanence
+                                             , dOriginatingCell  :: Cell
                                              }
 
-data ProximalSynapse  = ProximalSynapse      { pInput                      :: Input
-                                             , pSynapseState               :: SynapseState
-                                             , pPermanence                 :: Permanence
+data ProximalSynapse  = ProximalSynapse      { pInput        :: Input
+                                             , pSynapseState :: SynapseState
+                                             , pPermanence   :: Permanence
                                              }
 
 data Region           = Region               { columns                     :: [Column]

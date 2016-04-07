@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 H2TM: A Haskell HTM/CLA Implementation
-Copyright (C) 2015-2016, Tom Poczos
+Copyright (C) 2016, Tom Poczos
 
 Developed as part of a Final Year Project at Staffordshire University,
 United Kingdom by Tom Poczos under the supervision of Dr. Mohamed Sedky,
@@ -19,7 +19,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/agpl-3.0
+along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 -------------------------------------------------------------------------------}
 
 module TemporalPooler
@@ -27,9 +27,9 @@ module TemporalPooler
 ) where
 
 import           Data.List
-import           Flow
 import           FlexibleParallelism
-import qualified HtmData    as Htm
+import           Flow
+import qualified HtmData             as Htm
 
 temporalPooler :: Htm.Region -> Htm.Region
 temporalPooler region = region {Htm.columns = runTemporalPooler}

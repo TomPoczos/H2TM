@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 H2TM: A Haskell HTM/CLA Implementation
-Copyright (C) 2015-2016, Tom Poczos
+Copyright (C) 2016, Tom Poczos
 
 Developed as part of a Final Year Project at Staffordshire University,
 United Kingdom by Tom Poczos under the supervision of Dr. Mohamed Sedky,
@@ -19,7 +19,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/agpl-3.0
+along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 -------------------------------------------------------------------------------}
 
 module CycleHistory
@@ -28,11 +28,11 @@ module CycleHistory
     , add
     ) where
 
-import Flow
+import           Flow
 
-data CycleHistory = CycleHistory { values                :: [Bool]
-                                 , numOfVals             :: Int
-                                 , maxAmount             :: Int
+data CycleHistory = CycleHistory { values    :: [Bool]
+                                 , numOfVals :: Int
+                                 , maxAmount :: Int
                                  }
 
 instance Eq CycleHistory where
