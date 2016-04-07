@@ -183,9 +183,7 @@ adjustPermanences region activeColumn = case Htm.columnState activeColumn of
 boostColumn :: Htm.Region -> Htm.Column -> Htm.Column
 boostColumn region column = column {Htm.boost = updateBoost}
 
-    where
-
-          -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
+    where -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
           -- otherwise the column's current boost is increased by a value specified
           -- on per region basis
 
