@@ -33,19 +33,21 @@ import qualified HtmData             as Htm
 import           System.IO.Unsafe
 import           System.Random
 
+-- always initialised with learning on, which is necessary for training
+-- but can switched off after that
+
 htmInit :: Integer              -- number of columns
         -> Integer              -- number of cells per column
         -> Integer              -- number of proximal synapses per column
         -> Integer              -- number of distal dendrites per cell
         -> Integer              -- number of distal synapses per dendrite
         -> Double               -- permanence threshold
-        -> Bool                 -- Learning on if True, off if false
         -> Htm.ComplianceOption -- mode of icrease all permanences in SP phase 3
         -> Htm.ComplianceOption -- mode of decerasing boost value in SP phase 3
         -> ParallelismMode
         -> Htm.Region
 
-htmInit columns cells pSynapses dDendrites dSynapses permThreshold learning permChangeCompliance boostDecCompliance parallelism
+htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCompliance boostDecCompliance parallelism
                                    = Htm.Region             { Htm.columns                     = [1..columns] |> map createColumns
                                                             , Htm.desiredLocalActivity        = 0
                                                             , Htm.inhibitionRadius            = 0
@@ -58,7 +60,7 @@ htmInit columns cells pSynapses dDendrites dSynapses permThreshold learning perm
                                                             , Htm.dendriteMinThreshold        = 0
                                                             , Htm.complianceSettings          = createComplianceSettings
                                                             , Htm.parallelismMode             = parallelism
-                                                            , Htm.learningOn                  =  learning}
+                                                            , Htm.learningOn                  = True}
                                                             |> setUpOriginatinCells
 
     where createComplianceSettings = Htm.ComplianceSettings { Htm.permanenceBoost             = permChangeCompliance
