@@ -1,2 +1,17 @@
-just do stuff
-do other stuff too
+Welcome to H2TM!
+
+Please provide a file that contains the following settings
+(each on its own line):
+
+number of columns (integer, e.g. 400)
+number of cells per column (integer, e.g. 5)
+number of proximal synapses per column (integer, e.g. 5)
+number of distal dendrites per cell (integer, e.g. 5)
+number of distal synapses per dendrite (integer, e.g. 5)
+permanence threshold (double, e.g. 1.2)
+Should learning be on when processing the second file provided (True or False)
+Compliance setting to determine the mode of increasing permanences (Compliant or Modified)
+Compliance setting to determine the mode of increasing boost value (Compliant or Modified)
+Parallelism mode (None, Agressive or integer specifying number of threads)
+training file
+testing file
