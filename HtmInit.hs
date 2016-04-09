@@ -29,6 +29,7 @@ import           Data.List
 import           Data.Maybe
 import           FlexibleParallelism
 import           Flow
+import           HtmUtils
 import qualified HtmData             as Htm
 import           System.Random
 
@@ -95,13 +96,13 @@ htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCom
           createDSynapses dummyArg  = Htm.DistalSynapse     { Htm.dInput                      = Htm.Off
                                                             , Htm.dSynapseState               = Htm.Potential
                                                             , Htm.dPrevSynapseState           = Htm.Potential
-                                                            , Htm.dPermanence                 = getRndDouble (permThreshold - 0.1) (permThreshold - 0.01)}
+                                                            , Htm.dPermanence                 = getRnd stdGen [] (permThreshold - 0.1) (permThreshold - 0.01)}
                                                             {-originating cells are initialised after the entire region
                                                             (and particularly all the cells) is set up ; ignore compiler warning-}
 
           createPSynapses dummyArg  = Htm.ProximalSynapse   { Htm.pInput                      = Htm.Off
                                                             , Htm.pSynapseState               = Htm.Potential
-                                                            , Htm.pPermanence                 = getRndDouble (permThreshold - 0.1) (permThreshold - 0.01)}
+                                                            , Htm.pPermanence                 = getRnd stdGen [] (permThreshold - 0.1) (permThreshold - 0.01)}
 
           setUpOriginatinCells region =
                     region { Htm.columns = region |> Htm.columns |> map (\column ->
@@ -111,15 +112,4 @@ htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCom
                                     synapse{ Htm.dOriginatingCell =
                                         region |> Htm.columns
                                                |> concatMap Htm.cells
-                                               |> (\allCells -> allCells !! getRndInteger [fromJust $ elemIndex cell allCells] 0 (length allCells - 1))})})})})}
-
-          getRndDouble :: Double -> Double -> Double
-          getRndDouble minVal maxVal =
-              head $ randomRs (minVal, maxVal) stdGen
-
-          getRndInteger :: [Int] -> Int -> Int -> Int
-          getRndInteger disallowed minVal maxVal =  getRnd |> (\x ->
-              case () of
-                  _ | x `notElem` disallowed -> x
-                    | otherwise              -> getRnd)
-              where getRnd = head $ randomRs (minVal, maxVal) stdGen
+                                               |> (\allCells -> allCells !! getRnd stdGen [fromJust $ elemIndex cell allCells] 0 (length allCells - 1))})})})})}
