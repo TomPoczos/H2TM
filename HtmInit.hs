@@ -76,8 +76,8 @@ htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCom
                                                             , Htm.boost                       = 0.0
                                                             , Htm.overlap                     = 0.0
                                                             , Htm.key                         = colId
-                                                            , Htm.dutyCycles                  = CycleHistory [] 0 0
-                                                            , Htm.overlapCycles               = CycleHistory [] 0 0
+                                                            , Htm.dutyCycles                  = CycleHistory [] 0 1000
+                                                            , Htm.overlapCycles               = CycleHistory [] 0 1000
                                                             , Htm.columnState                 = Htm.InactiveColumn }
 
           createCells dummyArg      = Htm.Cell              { Htm.cellPredictiveState         = False
