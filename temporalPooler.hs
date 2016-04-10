@@ -149,7 +149,7 @@ phase2 region column = column { Htm.cells = column |> Htm.cells |> map changePre
 
           queueReinforcements :: Htm.Cell -> Htm.Cell
           queueReinforcements cell =
-              case getBestMatchingSegment Htm.Prev cell of
+              case getBestMatchingSegment region Htm.Prev cell of
                   Nothing       -> cell {Htm.queuedDistalSynapses = selectActive Htm.Current cell}
                   Just dendrite -> cell {Htm.queuedDistalSynapses = selectActive Htm.Current cell ++ Htm.distalSynapses dendrite}
 
@@ -160,30 +160,6 @@ phase2 region column = column { Htm.cells = column |> Htm.cells |> map changePre
                    |> filter (\ds -> case time of
                           Htm.Current -> Htm.dSynapseState ds == Htm.Actual && (ds |> Htm.dOriginatingCell |> Htm.cellActiveState)
                           Htm.Prev    -> Htm.dSynapseState ds == Htm.Actual && (ds |> Htm.dOriginatingCell |> Htm.cellPrevActiveState))
-
-          getBestMatchingSegment :: Htm.AcquisitionTime -> Htm.Cell -> Maybe Htm.DistalDendrite
-          getBestMatchingSegment time cell =
-             if (getSegmentWithMostActiveSynapses time cell |> getNumOfActiveSynapses time) < Htm.dendriteMinThreshold region
-                 then Nothing
-                 else Just (getSegmentWithMostActiveSynapses time cell)
-
-          getSegmentWithMostActiveSynapses time col =
-             col |> Htm.distalDendrites |> maximumBy (compareByActiveSynapses time)
-
-
-          compareByActiveSynapses time col1 col2
-              | getNumOfActiveSynapses time col1 > getNumOfActiveSynapses time col2 = GT
-              | getNumOfActiveSynapses time col1 < getNumOfActiveSynapses time col2 = LT
-              | getNumOfActiveSynapses time col1 == getNumOfActiveSynapses time col2 = EQ
-
-
-          getNumOfActiveSynapses time col = col
-              |> Htm.distalSynapses
-              |> map (\synapse -> case time of
-                     Htm.Current -> Htm.dSynapseState synapse
-                     Htm.Prev    -> Htm.dPrevSynapseState synapse)
-              |> filter (== Htm.Actual)
-              |> length
 
 phase3 :: Htm.Region -> Htm.Column -> Htm.Column
 phase3 region column =
@@ -202,3 +178,25 @@ resetQueuedSynapses :: Htm.Column -> Htm.Column
 resetQueuedSynapses column =
     column { Htm.cells = column |> Htm.cells |> map (\cell ->
         cell {Htm.queuedDistalSynapses = []})}
+
+getBestMatchingSegment :: Htm.Region -> Htm.AcquisitionTime -> Htm.Cell -> Maybe Htm.DistalDendrite
+getBestMatchingSegment region time cell =
+    if (getSegmentWithMostActiveSynapses cell |> getNumOfActiveSynapses) < Htm.dendriteMinThreshold region
+       then Nothing
+       else Just (getSegmentWithMostActiveSynapses cell)
+
+    where getSegmentWithMostActiveSynapses col =
+              col |> Htm.distalDendrites |> maximumBy compareByActiveSynapses
+
+          compareByActiveSynapses col1 col2
+              | getNumOfActiveSynapses col1 >  getNumOfActiveSynapses col2 = GT
+              | getNumOfActiveSynapses col1 <  getNumOfActiveSynapses col2 = LT
+              | getNumOfActiveSynapses col1 == getNumOfActiveSynapses col2 = EQ
+
+          getNumOfActiveSynapses col = col
+              |> Htm.distalSynapses
+              |> map (\synapse -> case time of
+                     Htm.Current -> Htm.dSynapseState synapse
+                     Htm.Prev    -> Htm.dPrevSynapseState synapse)
+              |> filter (== Htm.Actual)
+              |> length
