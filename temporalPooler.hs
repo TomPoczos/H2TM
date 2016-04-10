@@ -185,14 +185,17 @@ getBestMatchingSegment region time cell =
        then Nothing
        else Just (getSegmentWithMostActiveSynapses cell)
 
-    where getSegmentWithMostActiveSynapses col =
+    where getSegmentWithMostActiveSynapses :: Htm.Cell -> Htm.DistalDendrite
+          getSegmentWithMostActiveSynapses col =
               col |> Htm.distalDendrites |> maximumBy compareByActiveSynapses
 
+          compareByActiveSynapses :: Htm.DistalDendrite -> Htm.DistalDendrite -> Ordering
           compareByActiveSynapses col1 col2
               | getNumOfActiveSynapses col1 >  getNumOfActiveSynapses col2 = GT
               | getNumOfActiveSynapses col1 <  getNumOfActiveSynapses col2 = LT
               | getNumOfActiveSynapses col1 == getNumOfActiveSynapses col2 = EQ
 
+          getNumOfActiveSynapses :: Htm.DistalDendrite -> Int
           getNumOfActiveSynapses col = col
               |> Htm.distalSynapses
               |> map (\synapse -> case time of
