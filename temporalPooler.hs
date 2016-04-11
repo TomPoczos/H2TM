@@ -151,8 +151,13 @@ phase2 region column = column { Htm.cells = column |> Htm.cells |> map changePre
           queueReinforcements :: Htm.Cell -> Htm.Cell
           queueReinforcements cell =
               case getBestMatchingSegment region Htm.Prev cell of
-                  Nothing       -> cell {Htm.queuedDistalSynapses = selectActive Htm.Current cell}
-                  Just dendrite -> cell {Htm.queuedDistalSynapses = selectActive Htm.Current cell ++ Htm.distalSynapses dendrite}
+                  Nothing       -> cell {Htm.queuedDistalSynapses = Htm.queuedDistalSynapses cell ++
+                      filterAlreadyQueued cell (Htm.queuedDistalSynapses cell ++ selectActive Htm.Current cell)}
+                  Just dendrite -> cell {Htm.queuedDistalSynapses = Htm.queuedDistalSynapses cell ++
+                      filterAlreadyQueued cell (Htm.queuedDistalSynapses cell ++ selectActive Htm.Current cell ++ Htm.distalSynapses dendrite)}
+
+          filterAlreadyQueued :: Htm.Cell -> [Htm.DistalSynapse] -> [Htm.DistalSynapse]
+          filterAlreadyQueued cell synapses = synapses |> filter (`notElem` Htm.queuedDistalSynapses cell)
 
           selectActive :: Htm.AcquisitionTime -> Htm.Cell -> [Htm.DistalSynapse]
           selectActive time cell =
@@ -179,7 +184,6 @@ resetQueuedSynapses :: Htm.Column -> Htm.Column
 resetQueuedSynapses column =
     column { Htm.cells = column |> Htm.cells |> map (\cell ->
         cell {Htm.queuedDistalSynapses = []})}
-
 
 -- returns Just the best matching cell with its best matching DistalDendrite
 -- if no cell has a best matching dendrite it returns Nothing
@@ -213,7 +217,6 @@ getBestMatchingCell region column time = column
               | (cell1 |> Htm.distalDendrites |> length) >  (cell2 |> Htm.distalDendrites |> length) = GT
               | (cell1 |> Htm.distalDendrites |> length) <  (cell2 |> Htm.distalDendrites |> length) = LT
               | (cell1 |> Htm.distalDendrites |> length) == (cell2 |> Htm.distalDendrites |> length) = EQ
-
 
 getBestMatchingSegment :: Htm.Region -> Htm.AcquisitionTime -> Htm.Cell -> Maybe Htm.DistalDendrite
 getBestMatchingSegment region time cell =
