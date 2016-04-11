@@ -44,11 +44,17 @@ temporalPooler region = region {Htm.columns = runTemporalPooler}
 phase1 :: Htm.Region -> Htm.Column -> Htm.Column
 phase1 region column = if column |> columnPredictedInput
     then column { Htm.cells = column |> Htm.cells |> map changeCellState}
-    else column { Htm.cells = column |> Htm.cells |> map changeCellStateUnconditionally}
+    else column { Htm.cells = column |> Htm.cells
+                                     |> map changeCellStateUnconditionally
+                                     |> map changeLearnStateIfBestMatching}
 
+    where changeLearnStateIfBestMatching :: Htm.Cell -> Htm.Cell
+          changeLearnStateIfBestMatching cell =
+              if cell == getBestMatchingCell region column Htm.Current
+                  then cell {Htm.cellLearnState = True}
+                  else cell
 
-
-    where -- changes cell's active state to True unconditionally
+          -- changes cell's active state to True unconditionally
           -- changes cell's learn state to False in non-compliant mode
 
           changeCellStateUnconditionally :: Htm.Cell -> Htm.Cell
