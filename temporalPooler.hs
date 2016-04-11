@@ -180,15 +180,26 @@ resetQueuedSynapses column =
     column { Htm.cells = column |> Htm.cells |> map (\cell ->
         cell {Htm.queuedDistalSynapses = []})}
 
+
+-- returns Just the best matching cell with its best matching DistalDendrite
+-- if no cell has a best matching dendrite it returns Nothing
+
 getBestMatchingCell :: Htm.Region -> Htm.AcquisitionTime -> Maybe (Htm.Cell, Htm.DistalDendrite)
 getBestMatchingCell region time = region |> Htm.columns
            |> map Htm.cells
+           -- list of all the cells of a region in a single list
            |> concat
+           -- pair every cell with its best matching dendrite
            |> map (\cell -> (cell, getBestMatchingSegment region time cell))
+           -- filter out cells that do not have a best matching dendrite
            |> filter (\(_, segment) -> isJust segment)
+           -- get rid of Maybe as we know no segment is Nothing at this point
            |> map (\(cell, Just segment) -> (cell, segment))
            |> (\results -> case results of
+                  -- return nothing if we are left with an empty list
                   [] -> Nothing
+                  -- else return the cell that has the best matching dendrite
+                  -- (determined by number of active synapses)
                   _  -> Just (maximumBy segmentActiveSynapses results))
 
     where segmentActiveSynapses :: (Htm.Cell, Htm.DistalDendrite) -> (Htm.Cell, Htm.DistalDendrite) -> Ordering
