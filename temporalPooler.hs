@@ -190,10 +190,10 @@ getBestMatchingSegment region time cell =
               col |> Htm.distalDendrites |> maximumBy compareByActiveSynapses
 
           compareByActiveSynapses :: Htm.DistalDendrite -> Htm.DistalDendrite -> Ordering
-          compareByActiveSynapses col1 col2
-              | getNumOfActiveSynapses col1 >  getNumOfActiveSynapses col2 = GT
-              | getNumOfActiveSynapses col1 <  getNumOfActiveSynapses col2 = LT
-              | getNumOfActiveSynapses col1 == getNumOfActiveSynapses col2 = EQ
+          compareByActiveSynapses dendrite1 dendrite2
+              | getNumOfActiveSynapses dendrite1 >  getNumOfActiveSynapses dendrite2 = GT
+              | getNumOfActiveSynapses dendrite1 <  getNumOfActiveSynapses dendrite2 = LT
+              | getNumOfActiveSynapses dendrite1 == getNumOfActiveSynapses dendrite2 = EQ
 
           getNumOfActiveSynapses :: Htm.DistalDendrite -> Int
           getNumOfActiveSynapses col = col
