@@ -26,6 +26,7 @@ module TemporalPooler
 ( temporalPooler
 ) where
 
+import           Data.Maybe
 import           Data.List
 import           FlexibleParallelism
 import           Flow
@@ -179,27 +180,45 @@ resetQueuedSynapses column =
     column { Htm.cells = column |> Htm.cells |> map (\cell ->
         cell {Htm.queuedDistalSynapses = []})}
 
+getBestMatchingCell :: Htm.Region -> Htm.AcquisitionTime -> Maybe (Htm.Cell, Htm.DistalDendrite)
+getBestMatchingCell region time = region |> Htm.columns
+           |> map Htm.cells
+           |> concat
+           |> map (\cell -> (cell, getBestMatchingSegment region time cell))
+           |> filter (\(_, segment) -> isJust segment)
+           |> map (\(cell, Just segment) -> (cell, segment))
+           |> (\results -> case results of
+                  [] -> Nothing
+                  _  -> Just (maximumBy segmentActiveSynapses results))
+
+    where segmentActiveSynapses :: (Htm.Cell, Htm.DistalDendrite) -> (Htm.Cell, Htm.DistalDendrite) -> Ordering
+          segmentActiveSynapses (_, dendrite1) (_, dendrite2)
+              | getNumOfActiveSynapses time dendrite1 >  getNumOfActiveSynapses time dendrite2 = GT
+              | getNumOfActiveSynapses time dendrite1 <  getNumOfActiveSynapses time dendrite2 = LT
+              | getNumOfActiveSynapses time dendrite1 == getNumOfActiveSynapses time dendrite2 = EQ
+
+
 getBestMatchingSegment :: Htm.Region -> Htm.AcquisitionTime -> Htm.Cell -> Maybe Htm.DistalDendrite
 getBestMatchingSegment region time cell =
-    if (getSegmentWithMostActiveSynapses cell |> getNumOfActiveSynapses) < Htm.dendriteMinThreshold region
+    if (getSegmentWithMostActiveSynapses |> getNumOfActiveSynapses time) < Htm.dendriteMinThreshold region
        then Nothing
-       else Just (getSegmentWithMostActiveSynapses cell)
+       else Just getSegmentWithMostActiveSynapses
 
-    where getSegmentWithMostActiveSynapses :: Htm.Cell -> Htm.DistalDendrite
-          getSegmentWithMostActiveSynapses col =
-              col |> Htm.distalDendrites |> maximumBy compareByActiveSynapses
+    where getSegmentWithMostActiveSynapses :: Htm.DistalDendrite
+          getSegmentWithMostActiveSynapses =
+              cell |> Htm.distalDendrites |> maximumBy compareByActiveSynapses
 
           compareByActiveSynapses :: Htm.DistalDendrite -> Htm.DistalDendrite -> Ordering
           compareByActiveSynapses dendrite1 dendrite2
-              | getNumOfActiveSynapses dendrite1 >  getNumOfActiveSynapses dendrite2 = GT
-              | getNumOfActiveSynapses dendrite1 <  getNumOfActiveSynapses dendrite2 = LT
-              | getNumOfActiveSynapses dendrite1 == getNumOfActiveSynapses dendrite2 = EQ
+              | getNumOfActiveSynapses time dendrite1 >  getNumOfActiveSynapses time dendrite2 = GT
+              | getNumOfActiveSynapses time dendrite1 <  getNumOfActiveSynapses time dendrite2 = LT
+              | getNumOfActiveSynapses time dendrite1 == getNumOfActiveSynapses time dendrite2 = EQ
 
-          getNumOfActiveSynapses :: Htm.DistalDendrite -> Int
-          getNumOfActiveSynapses col = col
-              |> Htm.distalSynapses
-              |> map (\synapse -> case time of
-                     Htm.Current -> Htm.dSynapseState synapse
-                     Htm.Prev    -> Htm.dPrevSynapseState synapse)
-              |> filter (== Htm.Actual)
-              |> length
+getNumOfActiveSynapses :: Htm.AcquisitionTime -> Htm.DistalDendrite -> Int
+getNumOfActiveSynapses time dendrite = dendrite
+    |> Htm.distalSynapses
+    |> map (\synapse -> case time of
+        Htm.Current -> Htm.dSynapseState synapse
+        Htm.Prev    -> Htm.dPrevSynapseState synapse)
+    |> filter (== Htm.Actual)
+    |> length
