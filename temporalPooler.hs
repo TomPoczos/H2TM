@@ -184,29 +184,35 @@ resetQueuedSynapses column =
 -- returns Just the best matching cell with its best matching DistalDendrite
 -- if no cell has a best matching dendrite it returns Nothing
 
-getBestMatchingCell :: Htm.Region -> Htm.AcquisitionTime -> Maybe (Htm.Cell, Htm.DistalDendrite)
-getBestMatchingCell region time = region |> Htm.columns
-           |> map Htm.cells
-           -- list of all the cells of a region in a single list
-           |> concat
+getBestMatchingCell :: Htm.Region -> Htm.Column -> Htm.AcquisitionTime -> Htm.Cell
+getBestMatchingCell region column time = column
+           |> Htm.cells
            -- pair every cell with its best matching dendrite
            |> map (\cell -> (cell, getBestMatchingSegment region time cell))
            -- filter out cells that do not have a best matching dendrite
            |> filter (\(_, segment) -> isJust segment)
-           -- get rid of Maybe as we know no segment is Nothing at this point
+           -- get rid of Maybe as we know no Maybe segment is Nothing at this point
+           -- optional step included as it makes segmentActiveSynapses simpler
            |> map (\(cell, Just segment) -> (cell, segment))
            |> (\results -> case results of
-                  -- return nothing if we are left with an empty list
-                  [] -> Nothing
+                  -- return the cell with the lowest number of distalDendrites
+                  -- if we are left with an empty list
+                  [] -> column |> Htm.cells |> minimumBy numOfDendrites
                   -- else return the cell that has the best matching dendrite
                   -- (determined by number of active synapses)
-                  _  -> Just (maximumBy segmentActiveSynapses results))
+                  _  -> fst (maximumBy segmentActiveSynapses results) )
 
     where segmentActiveSynapses :: (Htm.Cell, Htm.DistalDendrite) -> (Htm.Cell, Htm.DistalDendrite) -> Ordering
           segmentActiveSynapses (_, dendrite1) (_, dendrite2)
               | getNumOfActiveSynapses time dendrite1 >  getNumOfActiveSynapses time dendrite2 = GT
               | getNumOfActiveSynapses time dendrite1 <  getNumOfActiveSynapses time dendrite2 = LT
               | getNumOfActiveSynapses time dendrite1 == getNumOfActiveSynapses time dendrite2 = EQ
+
+          numOfDendrites :: Htm.Cell -> Htm.Cell -> Ordering
+          numOfDendrites cell1 cell2
+              | (cell1 |> Htm.distalDendrites |> length) >  (cell2 |> Htm.distalDendrites |> length) = GT
+              | (cell1 |> Htm.distalDendrites |> length) <  (cell2 |> Htm.distalDendrites |> length) = LT
+              | (cell1 |> Htm.distalDendrites |> length) == (cell2 |> Htm.distalDendrites |> length) = EQ
 
 
 getBestMatchingSegment :: Htm.Region -> Htm.AcquisitionTime -> Htm.Cell -> Maybe Htm.DistalDendrite
