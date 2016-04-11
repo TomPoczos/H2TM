@@ -148,16 +148,21 @@ phase2 region column = column { Htm.cells = column |> Htm.cells |> map changePre
                                            then cell {Htm.cellPredictiveState = True}
                                            else cell {Htm.cellPredictiveState = False}
 
+          -- all active synapses are added to queuedDistalSynapses
+          -- if a bestMatchingSegment exists its synapses are added on top of that.
+
           queueReinforcements :: Htm.Cell -> Htm.Cell
           queueReinforcements cell =
               case getBestMatchingSegment region Htm.Prev cell of
-                  Nothing       -> cell {Htm.queuedDistalSynapses = Htm.queuedDistalSynapses cell ++
-                      filterAlreadyQueued cell (Htm.queuedDistalSynapses cell ++ selectActive Htm.Current cell)}
-                  Just dendrite -> cell {Htm.queuedDistalSynapses = Htm.queuedDistalSynapses cell ++
-                      filterAlreadyQueued cell (Htm.queuedDistalSynapses cell ++ selectActive Htm.Current cell ++ Htm.distalSynapses dendrite)}
-
-          filterAlreadyQueued :: Htm.Cell -> [Htm.DistalSynapse] -> [Htm.DistalSynapse]
-          filterAlreadyQueued cell synapses = synapses |> filter (`notElem` Htm.queuedDistalSynapses cell)
+                  Nothing       -> cell {Htm.queuedDistalSynapses =
+                                             nub $ Htm.queuedDistalSynapses cell ++
+                                                   Htm.queuedDistalSynapses cell ++
+                                                   selectActive Htm.Current cell}
+                  Just dendrite -> cell {Htm.queuedDistalSynapses =
+                                             nub $ Htm.queuedDistalSynapses cell ++
+                                                   Htm.queuedDistalSynapses cell ++
+                                                   selectActive Htm.Current cell ++
+                                                   Htm.distalSynapses dendrite}
 
           selectActive :: Htm.AcquisitionTime -> Htm.Cell -> [Htm.DistalSynapse]
           selectActive time cell =
