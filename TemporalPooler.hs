@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 H2TM: A Haskell HTM/CLA Implementation
-Copyright (C) 2016, Tom Poczos
+Copyright (C) 2016, Tom Poczos 
 
 Developed as part of a Final Year Project at Staffordshire University,
 United Kingdom by Tom Poczos under the supervision of Dr. Mohamed Sedky,

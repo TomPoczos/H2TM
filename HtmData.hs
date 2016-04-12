@@ -110,6 +110,7 @@ data DistalSynapse    = DistalSynapse        { dInput                      :: In
 data ProximalSynapse  = ProximalSynapse      { pInput                      :: Input
                                              , pSynapseState               :: SynapseState
                                              , pPermanence                 :: Permanence
+                                             , timeStepIndex               :: Int
                                              }
 
 data Region           = Region               { columns                     :: [Column]
@@ -138,8 +139,8 @@ instance Eq DistalSynapse where
         && (a5 == b5)
 
 instance Eq ProximalSynapse where
-    ProximalSynapse a1 a2 a3 == ProximalSynapse b1 b2 b3 =
-        (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001)
+    ProximalSynapse a1 a2 a3 a4 == ProximalSynapse b1 b2 b3 b4 =
+        (a1 == b1) && (a2 == b2) && (abs (a3 - b3) <= 0.001) && (a4 == b4)
 
 instance Eq Input where
     On == On = True

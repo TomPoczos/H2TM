@@ -33,6 +33,8 @@ import qualified HtmData             as Htm
 import           HtmInit
 import           System.IO
 import           System.Random
+import           TemporalPooler
+import           SpatialPooler
 
 main :: IO ()
 main = do
@@ -47,23 +49,60 @@ main = do
     learning       <- settings |> lines |> setup stdGen |> sel2 |> return
     trainingFileH  <- settings |> lines |> setup stdGen |> sel3 |> flip openFile ReadMode
     testingFileH   <- settings |> lines |> setup stdGen |> sel4 |> flip openFile ReadMode
+    repetitions    <- settings |> lines |> setup stdGen |> sel5 |> return
     trainingString <- hGetContents trainingFileH
-    trainingData   <- processData trainingString |> return
+    trainingData   <- trainingString |> processData |> return
+    trainedRegion  <- trainRegion region trainingData repetitions |> changeLearningState learning |> return
+    testingString  <- hGetContents testingFileH
+    testingData    <- testingString |> processData |> return
 
-    -- trainingData <- processData trainingString
+    print $ testRegion trainedRegion testingData
 
-
-
-    putStr settings
     hClose trainingFileH
-    --cols <- hGetLine :: Integer settings
-{-
-trainRegion :: Htm.Region -> [[Htm.Input]] -> Htm.Region
-trainRegion region (input = runTimeStep region input
-    where runTimeStep r (timeStep:timesteps) =
+    hClose testingFileH
 
-          feedInput singleInput column = column {htm.}
--}
+changeLearningState :: Bool -> Htm.Region -> Htm.Region
+changeLearningState shouldLearn region = region {Htm.learningOn = shouldLearn}
+
+testRegion :: Htm.Region -> [[Htm.Input]] -> [Double]
+testRegion region testingData = timeStepTest testingData [] region
+    where timeStepTest :: [[Htm.Input]] -> [Double] -> Htm.Region -> [Double]
+          timeStepTest (timeStep:timeSteps) results reg =
+              reg {Htm.columns = region |> Htm.columns |> map (\column ->
+                  column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
+                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
+              |> spatialPooler
+              |> temporalPooler
+              |> timeStepTest timeSteps (noveltyRatio region:results)
+
+          timeStepTest [] results _ = results
+
+          noveltyRatio :: Htm.Region -> Double
+          noveltyRatio reg =
+              (reg |> Htm.columns
+                     |> map Htm.cells
+                     |> filter (\cells -> all Htm.cellActiveState cells)
+                     |> length
+                     |> fromIntegral :: Double)
+              / (region |> Htm.columns |> length |> fromIntegral :: Double)
+
+trainRegion :: Htm.Region -> [[Htm.Input]] -> Int -> Htm.Region
+trainRegion region trainingData reps = train reps region
+    where train numOfReps reg =
+              case numOfReps of
+                  0 -> reg
+                  _ -> timeStepTrain trainingData reg
+
+          timeStepTrain (timeStep:timeSteps) reg =
+              (reg {Htm.columns = region |> Htm.columns |> map (\column ->
+                  column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
+                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})})
+              |> spatialPooler
+              |> temporalPooler
+              |> timeStepTrain timeSteps
+
+          timeStepTrain [] reg = reg
+
 processData :: String -> [[Htm.Input]]
 processData dataString =
     dataString |> Text.pack
@@ -74,17 +113,18 @@ processData dataString =
                               "1" -> Htm.On
                               "0" -> Htm.Off))
 
-setup :: StdGen -> [String] -> (Htm.Region, Bool, String, String)
-setup stdGen (cols:cells:psyn:dDend:dSyn:permThreshold:learning:permCompl:boostComp:parallelism:trainingFile:testingFile:[]) =
+setup :: StdGen -> [String] -> (Htm.Region, Bool, String, String, Int)
+setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold,learning,permCompl,boostComp,parallelism,trainingFile,testingFile,learningRepetitions] =
     case learning of
-        "True"  -> (createInitialRegion, True, trainingFile, testingFile)
-        "False" -> (createInitialRegion, False, trainingFile, testingFile)
+        "True"  -> (createInitialRegion, True, trainingFile, testingFile, read learningRepetitions :: Int)
+        "False" -> (createInitialRegion, False, trainingFile, testingFile, read learningRepetitions :: Int)
 
     where createInitialRegion = htmInit (read cols :: Integer)
                 (read cells :: Integer)
                 (read psyn :: Integer)
                 (read dDend :: Integer)
                 (read dSyn :: Integer)
+                (read timeStepSize :: Int)
                 (read permThreshold :: Double)
                 (readComplianceOption permCompl)
                 (readComplianceOption boostComp)
@@ -99,7 +139,3 @@ setup stdGen (cols:cells:psyn:dDend:dSyn:permThreshold:learning:permCompl:boostC
           readParallelismMode "None" = None
           readParallelismMode "Agressive" = Agressive
           readParallelismMode numOfThreads = Limited (read numOfThreads :: Int)
-
-          readLearningMode :: String -> Bool
-          readLearningMode "True" = True
-          readLearningMode "False" = False

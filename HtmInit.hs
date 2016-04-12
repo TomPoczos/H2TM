@@ -41,6 +41,7 @@ htmInit :: Integer              -- number of columns
         -> Integer              -- number of proximal synapses per column
         -> Integer              -- number of distal dendrites per cell
         -> Integer              -- number of distal synapses per dendrite
+        -> Int              -- timestep size
         -> Double               -- permanence threshold
         -> Htm.ComplianceOption -- mode of icrease all permanences in SP phase 3
         -> Htm.ComplianceOption -- mode of decerasing boost value in SP phase 3
@@ -49,7 +50,7 @@ htmInit :: Integer              -- number of columns
         -> Htm.Region
 
 
-htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCompliance boostDecCompliance parallelism stdGen
+htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold permChangeCompliance boostDecCompliance parallelism stdGen
                                    = Htm.Region             { Htm.columns                     = [1..columns] |> map createColumns
                                                             , Htm.desiredLocalActivity        = 0
                                                             , Htm.inhibitionRadius            = 0
@@ -102,7 +103,8 @@ htmInit columns cells pSynapses dDendrites dSynapses permThreshold permChangeCom
 
           createPSynapses dummyArg  = Htm.ProximalSynapse   { Htm.pInput                      = Htm.Off
                                                             , Htm.pSynapseState               = Htm.Potential
-                                                            , Htm.pPermanence                 = getRnd stdGen [] (permThreshold - 0.1) (permThreshold - 0.01)}
+                                                            , Htm.pPermanence                 = getRnd stdGen [] (permThreshold - 0.1) (permThreshold - 0.01)
+                                                            , Htm.timeStepIndex               = getRnd stdGen [] 0 (timeStepSize - 1)}
 
           setUpOriginatinCells region =
                     region { Htm.columns = region |> Htm.columns |> map (\column ->
