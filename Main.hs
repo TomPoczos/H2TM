@@ -24,6 +24,7 @@ along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 
 module Main where
 
+import           Data.Maybe
 import           Data.List
 import qualified Data.Text           as Text
 import           Data.Tuple.Select
@@ -45,11 +46,11 @@ main = do
     settingsPath   <- getLine
     settings       <- readFile settingsPath
     stdGen         <- newStdGen
-    region         <- settings |> lines |> setup stdGen |> sel1 |> return
-    learning       <- settings |> lines |> setup stdGen |> sel2 |> return
-    trainingFileH  <- settings |> lines |> setup stdGen |> sel3 |> flip openFile ReadMode
-    testingFileH   <- settings |> lines |> setup stdGen |> sel4 |> flip openFile ReadMode
-    repetitions    <- settings |> lines |> setup stdGen |> sel5 |> return
+    region         <- settings |> lines |> setup stdGen |> fromJust |> sel1 |> return
+    learning       <- settings |> lines |> setup stdGen |> fromJust |> sel2 |> return
+    trainingFileH  <- settings |> lines |> setup stdGen |> fromJust |> sel3 |> flip openFile ReadMode
+    testingFileH   <- settings |> lines |> setup stdGen |> fromJust |> sel4 |> flip openFile ReadMode
+    repetitions    <- settings |> lines |> setup stdGen |> fromJust |> sel5 |> return
     trainingString <- hGetContents trainingFileH
     trainingData   <- trainingString |> processData |> return
     trainedRegion  <- trainRegion region trainingData repetitions |> changeLearningState learning |> return
@@ -68,7 +69,7 @@ testRegion :: Htm.Region -> [[Htm.Input]] -> [Double]
 testRegion region testingData = timeStepTest testingData [] region
     where timeStepTest :: [[Htm.Input]] -> [Double] -> Htm.Region -> [Double]
           timeStepTest (timeStep:timeSteps) results reg =
-              reg {Htm.columns = region |> Htm.columns |> map (\column ->
+              reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
                       synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
               |> spatialPooler
@@ -94,7 +95,7 @@ trainRegion region trainingData reps = train reps region
                   _ -> timeStepTrain trainingData reg
 
           timeStepTrain (timeStep:timeSteps) reg =
-              (reg {Htm.columns = region |> Htm.columns |> map (\column ->
+              (reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
                       synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})})
               |> spatialPooler
@@ -113,11 +114,11 @@ processData dataString =
                               "1" -> Htm.On
                               "0" -> Htm.Off))
 
-setup :: StdGen -> [String] -> (Htm.Region, Bool, String, String, Int)
+setup :: StdGen -> [String] -> Maybe (Htm.Region, Bool, String, String, Int)
 setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold,learning,permCompl,boostComp,parallelism,trainingFile,testingFile,learningRepetitions] =
     case learning of
-        "True"  -> (createInitialRegion, True, trainingFile, testingFile, read learningRepetitions :: Int)
-        "False" -> (createInitialRegion, False, trainingFile, testingFile, read learningRepetitions :: Int)
+        "True"  -> Just (createInitialRegion, True,  trainingFile, testingFile, read learningRepetitions :: Int)
+        "False" -> Just (createInitialRegion, False, trainingFile, testingFile, read learningRepetitions :: Int)
 
     where createInitialRegion = htmInit (read cols :: Integer)
                 (read cells :: Integer)
@@ -139,3 +140,5 @@ setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold,learning,per
           readParallelismMode "None" = None
           readParallelismMode "Agressive" = Agressive
           readParallelismMode numOfThreads = Limited (read numOfThreads :: Int)
+
+setup _ _ = Nothing

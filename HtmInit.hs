@@ -52,15 +52,15 @@ htmInit :: Integer              -- number of columns
 
 htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold permChangeCompliance boostDecCompliance parallelism stdGen
                                    = Htm.Region             { Htm.columns                     = [1..columns] |> map createColumns
-                                                            , Htm.desiredLocalActivity        = 0
-                                                            , Htm.inhibitionRadius            = 0
-                                                            , Htm.minimumOverlap              = 0.0
-                                                            , Htm.permanenceInc               = 0.0
-                                                            , Htm.permanenceDec               = 0.0
-                                                            , Htm.boostInc                    = 0.0
+                                                            , Htm.desiredLocalActivity        = 10
+                                                            , Htm.inhibitionRadius            = 10
+                                                            , Htm.minimumOverlap              = 3.0
+                                                            , Htm.permanenceInc               = 0.5
+                                                            , Htm.permanenceDec               = 0.05
+                                                            , Htm.boostInc                    = 0.2
                                                             , Htm.permanenceThreshold         = permThreshold
-                                                            , Htm.dendriteActivationThreshold = 0
-                                                            , Htm.dendriteMinThreshold        = 0
+                                                            , Htm.dendriteActivationThreshold = 2
+                                                            , Htm.dendriteMinThreshold        = 2
                                                             , Htm.complianceSettings          = createComplianceSettings
                                                             , Htm.parallelismMode             = parallelism
                                                             , Htm.learningOn                  = True}
@@ -74,14 +74,14 @@ htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold 
 
           createColumns colId       = Htm.Column            { Htm.cells                       = [1..cells] |> map createCells
                                                             , Htm.proximalSynapses            = [1..pSynapses] |> map createPSynapses
-                                                            , Htm.boost                       = 0.0
-                                                            , Htm.overlap                     = 0.0
+                                                            , Htm.boost                       = 0.3
+                                                            , Htm.overlap                     = 0.2
                                                             , Htm.key                         = colId
                                                             , Htm.dutyCycles                  = CycleHistory [] 0 1000
                                                             , Htm.overlapCycles               = CycleHistory [] 0 1000
-                                                            , Htm.columnState                 = Htm.InactiveColumn }
+                                                            , Htm.columnState                 = Htm.ActiveColumn }
 
-          createCells dummyArg      = Htm.Cell              { Htm.cellPredictiveState         = False
+          createCells _             = Htm.Cell              { Htm.cellPredictiveState         = False
                                                             , Htm.cellLearnState              = False
                                                             , Htm.cellActiveState             = False
                                                             , Htm.cellPrevActiveState         = False
@@ -89,21 +89,21 @@ htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold 
                                                             , Htm.distalDendrites             = [1..dDendrites] |> map createDDendrites
                                                             , Htm.queuedDistalSynapses        = [] }
 
-          createDDendrites dummyArg = Htm.DistalDendrite    { Htm.distalSynapses              = [1..dSynapses] |> map createDSynapses
+          createDDendrites _        = Htm.DistalDendrite    { Htm.distalSynapses              = [1..dSynapses] |> map createDSynapses
                                                             , Htm.sequenceSegment             = False
                                                             , Htm.dendriteActiveState         = False
                                                             , Htm.dendrtiteLearnState         = False }
 
-          createDSynapses dummyArg  = Htm.DistalSynapse     { Htm.dInput                      = Htm.Off
+          createDSynapses _         = Htm.DistalSynapse     { Htm.dInput                      = Htm.Off
                                                             , Htm.dSynapseState               = Htm.Potential
                                                             , Htm.dPrevSynapseState           = Htm.Potential
-                                                            , Htm.dPermanence                 = getRnd stdGen [] (permThreshold - 0.1) (permThreshold - 0.01)}
-                                                            {-originating cells are initialised after the entire region
-                                                            (and particularly all the cells) is set up ; ignore compiler warning-}
+                                                            , Htm.dPermanence                 = getRnd stdGen [] (permThreshold - 0.01) (permThreshold - 0.001)
+                                                            , Htm.dOriginatingCell            = Htm.Cell False False False False False ([1..dDendrites] |> map createDDendrites) []}
+                                                            {-temporary originating cell, replaced in last step of init-}
 
-          createPSynapses dummyArg  = Htm.ProximalSynapse   { Htm.pInput                      = Htm.Off
+          createPSynapses _         = Htm.ProximalSynapse   { Htm.pInput                      = Htm.Off
                                                             , Htm.pSynapseState               = Htm.Potential
-                                                            , Htm.pPermanence                 = getRnd stdGen [] (permThreshold - 0.1) (permThreshold - 0.01)
+                                                            , Htm.pPermanence                 = getRnd stdGen [] (permThreshold - 0.01) (permThreshold - 0.001)
                                                             , Htm.timeStepIndex               = getRnd stdGen [] 0 (timeStepSize - 1)}
 
           setUpOriginatinCells region =

@@ -16,3 +16,4 @@ Compliance setting to determine the mode of increasing boost value (Compliant or
 Parallelism mode (None, Agressive or integer specifying number of threads)
 training file
 testing file
+number of times the training set should be looped through
