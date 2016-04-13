@@ -74,7 +74,7 @@ testRegion region testingData = timeStepTest testingData [] region
                       synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
               |> spatialPooler
               |> temporalPooler
-              |> timeStepTest timeSteps (noveltyRatio region:results)
+              |> timeStepTest timeSteps ((noveltyRatio reg):results)
 
           timeStepTest [] results _ = results
 
@@ -85,14 +85,14 @@ testRegion region testingData = timeStepTest testingData [] region
                      |> filter (\cells -> all Htm.cellActiveState cells)
                      |> length
                      |> fromIntegral :: Double)
-              / (region |> Htm.columns |> length |> fromIntegral :: Double)
+              / (reg |> Htm.columns |> length |> fromIntegral :: Double)
 
 trainRegion :: Htm.Region -> [[Htm.Input]] -> Int -> Htm.Region
 trainRegion region trainingData reps = train reps region
     where train numOfReps reg =
               case numOfReps of
                   0 -> reg
-                  _ -> timeStepTrain trainingData reg
+                  _ -> train (numOfReps - 1) ({-timeStepTrain trainingData -}reg)
 
           timeStepTrain (timeStep:timeSteps) reg =
               (reg {Htm.columns = reg |> Htm.columns |> map (\column ->
