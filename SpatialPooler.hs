@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 H2TM: A Haskell HTM/CLA Implementation
-Copyright (C) 2016, Tom Poczos 
+Copyright (C) 2016, Tom Poczos
 
 Developed as part of a Final Year Project at Staffordshire University,
 United Kingdom by Tom Poczos under the supervision of Dr. Mohamed Sedky,
@@ -203,20 +203,21 @@ boostColumn region column = column {Htm.boost = updateBoost}
                                         |> maximum)
 
 boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
-boostPermanences region column = column {Htm.proximalSynapses = increasePermanences}
-    where increasePermanences :: [Htm.ProximalSynapse]
-          increasePermanences = case region |> Htm.complianceSettings |> Htm.permanenceBoost of
-              Htm.Compliant -> if (column |> Htm.overlapCycles |> Ch.activeCycle) < minDutyCycle
-                                   then Htm.proximalSynapses column |> map increasePermanence
-                                   else Htm.proximalSynapses column
+boostPermanences region column = column {Htm.proximalSynapses = increasePermanences region column}
+    where increasePermanences :: Htm.Region -> Htm.Column -> [Htm.ProximalSynapse]
+          increasePermanences reg col = case reg |> Htm.complianceSettings |> Htm.permanenceBoost of
+              Htm.Compliant -> if False --(col |> Htm.overlapCycles |> Ch.activeCycle) < minDutyCycle
+                                   then Htm.proximalSynapses col |> map increasePermanence
+                                   else Htm.proximalSynapses col
               Htm.Modified  -> if (column |> Htm.overlapCycles |> Ch.activeCycle) < minOverlapCycle
                                    then Htm.proximalSynapses column |> map increasePermanence
                                    else Htm.proximalSynapses column
 
-          increasePermanence synapse = synapse { Htm.pSynapseState =
-              if increasedPermanence synapse > Htm.permanenceThreshold region
-                  then Htm.Actual
-                  else Htm.Potential}
+          increasePermanence synapse =
+              synapse { Htm.pPermanence = increasedPermanence synapse,
+                        Htm.pSynapseState = if increasedPermanence synapse > Htm.permanenceThreshold region
+                                                then Htm.Actual
+                                                else Htm.Potential}
 
           increasedPermanence :: Htm.ProximalSynapse -> Htm.Permanence
           increasedPermanence synapse = Htm.pPermanence synapse + 0.1 * Htm.permanenceThreshold region
