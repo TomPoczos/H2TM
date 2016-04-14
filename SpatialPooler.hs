@@ -58,9 +58,13 @@ spatialPooler region = region {Htm.columns = runSpatialPooler}
 
 newRadius :: Htm.Region -> Integer
 newRadius region = (numOfRegionsActiveSynapses / numOfRegionsSynapses) * numOfRegionsInputs
+    |> (\a -> trace ("numOfRegionsActiveSynapses: " ++ (show numOfRegionsActiveSynapses)
+                    ++ "\nnumOfRegionsSynapses" ++ (show numOfRegionsSynapses)
+                    ++ "\nnumOfRegionsInputs" ++ (show numOfRegionsInputs) ++"\n\n"
+                        ) a)
     |> round
     |> min ((region |> Htm.columns |> length) - 1 |> toInteger)
-
+    -- |> (\a -> trace ("radius: " ++ (show a)) a)
     where numOfRegionsActiveSynapses :: Double
           numOfRegionsActiveSynapses = region |> Htm.columns
                                               |> concatMap Htm.proximalSynapses
@@ -137,7 +141,7 @@ setActiveState region column =
           isWinner c = Htm.overlap c > 0.0
                     && Htm.overlap c >= (c |> neighbours region
                                            |> sortBy compareOverlaps
-                                           |> drop ((Htm.desiredLocalActivity region - 1) |> fromInteger :: Int)
+                                           |> drop ((Htm.desiredLocalActivity region -1) |> fromInteger :: Int)
                                            |> head
                                            |> Htm.overlap)
 
@@ -145,7 +149,7 @@ setActiveState region column =
           compareOverlaps columnA columnB
               | Htm.overlap columnA < Htm.overlap columnB                = LT
               | Htm.overlap columnA > Htm.overlap columnB                = GT
-              | abs (Htm.overlap columnA - Htm.overlap columnB) <= 0.001 = EQ
+              | abs (Htm.overlap columnA - Htm.overlap columnB) <= 0.01 = EQ
 
 -- PHASE 3.1: LEARNING
 -- returns a modified column with the permanence of each of its distal syanpses updated
@@ -165,8 +169,12 @@ adjustPermanences region activeColumn = case Htm.columnState activeColumn of
 
           changePermanence :: Htm.ProximalSynapse -> Htm.ProximalSynapse
           changePermanence synapse = case Htm.pSynapseState synapse of
-              Htm.Actual    -> synapse {Htm.pPermanence = synapse |> Htm.pPermanence |> increasePermanence}
-              Htm.Potential -> synapse {Htm.pPermanence = synapse |> Htm.pPermanence |> decreasePermanence}
+              Htm.Actual    -> synapse { Htm.pPermanence = synapse |> Htm.pPermanence |> increasePermanence
+                                       , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse |> Htm.pPermanence |> increasePermanence)
+                                            then Htm.Actual else Htm.Potential}
+              Htm.Potential -> synapse { Htm.pPermanence = synapse |> Htm.pPermanence |> decreasePermanence
+                                       , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse |> Htm.pPermanence |> decreasePermanence)
+                                            then Htm.Actual else Htm.Potential}
 
           -- increases permanence based on the region's permanenceInc value
 
@@ -245,7 +253,7 @@ neighbours region column = region |> Htm.columns |> filter withinInhibitionRadiu
           withinInhibitionRadius potentialNeighbor
         --      | isNothing $ indexOfColumn column            = False
         --      | isNothing $ indexOfColumn potentialNeighbor = False
-              -- | potentialNeighbor == column                 = False
+              | potentialNeighbor == column                 = False
               -- FromJust can be used here safely as we already now that
               -- "indexOfColumn column" returns "Just Integer"
               | abs (indexOfColumn column - indexOfColumn potentialNeighbor) <= Htm.inhibitionRadius region = True

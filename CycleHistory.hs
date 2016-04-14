@@ -33,7 +33,7 @@ import           Flow
 data CycleHistory = CycleHistory { values    :: [Bool]
                                  , numOfVals :: Int
                                  , maxAmount :: Int
-                                 }
+                                 } deriving (Show)
 
 instance Eq CycleHistory where
     CycleHistory a1 a2 a3 == CycleHistory b1 b2 b3 =

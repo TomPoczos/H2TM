@@ -61,19 +61,19 @@ data AcquisitionTime  = Current | Prev
 
 data CellState        = ActiveCell | PredictiveCell | InactiveCell
 
-data ColumnState      = ActiveColumn | InactiveColumn
+data ColumnState      = ActiveColumn | InactiveColumn deriving (Show)
 
-data SynapseState     = Potential | Actual
+data SynapseState     = Potential | Actual deriving (Show)
 
-data Input            = On | Off
+data Input            = On | Off deriving (Show)
 
-data ComplianceOption = Compliant | Modified
+data ComplianceOption = Compliant | Modified deriving (Show)
 
 data ComplianceSettings = ComplianceSettings { permanenceBoost             :: !ComplianceOption
                                              , resetToFalse                :: !ComplianceOption
                                              , activeSegmentChoice         :: !ComplianceOption
                                              , boostDecrease               :: !ComplianceOption
-                                             }
+                                             } deriving (Show)
 
 data Cell             = Cell                 { cellPredictiveState         :: !Bool
                                              , cellLearnState              :: !Bool
@@ -83,7 +83,7 @@ data Cell             = Cell                 { cellPredictiveState         :: !B
                                              , distalDendrites             :: ![DistalDendrite]
                                              , queuedDistalSynapses        :: ![DistalSynapse]
                                              , cellId                      :: !Integer
-                                             }
+                                             } deriving (Show)
 
 data Column           = Column               { cells                       :: ![Cell]
                                              , proximalSynapses            :: ![ProximalSynapse]
@@ -93,14 +93,14 @@ data Column           = Column               { cells                       :: ![
                                              , overlapCycles               :: !CycleHistory
                                              , columnState                 :: !ColumnState
                                              , columnId                    :: !Integer
-                                             }
+                                             } deriving (Show)
 
 data DistalDendrite  = DistalDendrite        { distalSynapses              :: ![DistalSynapse]
                                              , sequenceSegment             :: !Bool
                                              , dendriteActiveState         :: !Bool
                                              , dendrtiteLearnState         :: !Bool
                                              , dendriteId                  :: !Integer
-                                             }
+                                             } deriving (Show)
 
 data DistalSynapse    = DistalSynapse        { dInput                      :: !Input
                                              , dSynapseState               :: !SynapseState
@@ -108,14 +108,14 @@ data DistalSynapse    = DistalSynapse        { dInput                      :: !I
                                              , dPermanence                 :: !Permanence
                                              , dOriginatingCell            :: !Cell
                                              , dSyanpseId                  :: !Integer
-                                             }
+                                             } deriving (Show)
 
 data ProximalSynapse  = ProximalSynapse      { pInput                      :: !Input
                                              , pSynapseState               :: !SynapseState
                                              , pPermanence                 :: !Permanence
                                              , timeStepIndex               :: !Int
                                              , pSynapseId                  :: !Integer
-                                             }
+                                             } deriving (Show)
 
 data Region           = Region               { columns                     :: ![Column]
                                              , desiredLocalActivity        :: !LocalActivity
@@ -131,7 +131,7 @@ data Region           = Region               { columns                     :: ![
                                              , parallelismMode             :: !ParallelismMode
                                              , learningOn                  :: !Bool
                                              , regionId                    :: !Integer
-                                             }
+                                             } deriving (Show)
 
 instance NFData Column
 

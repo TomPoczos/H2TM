@@ -185,10 +185,16 @@ phase3 region column =
             dendrite { Htm.distalSynapses = dendrite |> Htm.distalSynapses |> map (\synapse ->
                 if Htm.cellLearnState cell
                     then if synapse `elem` Htm.queuedDistalSynapses cell
-                        then synapse {Htm.dPermanence = Htm.dPermanence synapse + Htm.permanenceInc region}
-                        else synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region}
+                        then synapse { Htm.dPermanence = Htm.dPermanence synapse + Htm.permanenceInc region
+                                     , Htm.dSynapseState = if Htm.dPermanence synapse >= (Htm.dPermanence synapse + Htm.permanenceInc region)
+                                           then Htm.Actual else Htm.Potential}
+                        else synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region
+                                     , Htm.dSynapseState = if Htm.dPermanence synapse >= (Htm.dPermanence synapse + Htm.permanenceInc region)
+                                           then Htm.Actual else Htm.Potential}
                     else if not $ Htm.cellPredictiveState cell && Htm.cellPrevPredictiveState cell && synapse `elem` Htm.queuedDistalSynapses cell
-                        then synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region}
+                        then synapse {Htm.dPermanence = Htm.dPermanence synapse - Htm.permanenceDec region
+                                     , Htm.dSynapseState = if Htm.dPermanence synapse >= (Htm.dPermanence synapse + Htm.permanenceInc region)
+                                           then Htm.Actual else Htm.Potential}
                         else synapse)})})}
 
 resetQueuedSynapses :: Htm.Column -> Htm.Column

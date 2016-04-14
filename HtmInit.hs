@@ -24,6 +24,7 @@ along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 
 module HtmInit (htmInit) where
 
+import Debug.Trace
 import           CycleHistory
 import           Data.List
 import           Data.Maybe
@@ -41,7 +42,7 @@ htmInit :: Integer              -- number of columns
         -> Integer              -- number of proximal synapses per column
         -> Integer              -- number of distal dendrites per cell
         -> Integer              -- number of distal synapses per dendrite
-        -> Int              -- timestep size
+        -> Int                  -- timestep size
         -> Double               -- permanence threshold
         -> Htm.ComplianceOption -- mode of icrease all permanences in SP phase 3
         -> Htm.ComplianceOption -- mode of decerasing boost value in SP phase 3
@@ -53,7 +54,7 @@ htmInit :: Integer              -- number of columns
 htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold permChangeCompliance boostDecCompliance parallelism stdGen
                                    = Htm.Region             { Htm.columns                     = [1..columns] |> map createColumns
                                                             , Htm.desiredLocalActivity        = 10
-                                                            , Htm.inhibitionRadius            = 10
+                                                            , Htm.inhibitionRadius            = 1000
                                                             , Htm.minimumOverlap              = 10
                                                             , Htm.permanenceInc               = 0.05
                                                             , Htm.permanenceDec               = 0.01
@@ -66,8 +67,25 @@ htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold 
                                                             , Htm.learningOn                  = True
                                                             , Htm.regionId                    = 1}
                                                             |> setUpOriginatinCells
+                                                            |> pSynapseActiveStates
+                                                            |> dSynapseActiveStates
 
-    where createComplianceSettings = Htm.ComplianceSettings { Htm.permanenceBoost             = permChangeCompliance
+    where dSynapseActiveStates region =
+              region {Htm.columns = region |> Htm.columns |> map (\column ->
+                  column {Htm.cells = column |> Htm.cells |> map (\cell ->
+                      cell{Htm.distalDendrites = cell |> Htm.distalDendrites |> map (\dendrite ->
+                          dendrite {Htm.distalSynapses = dendrite |> Htm.distalSynapses |> map (\dSyn ->
+                          dSyn {Htm.dSynapseState = if Htm.dPermanence dSyn >= permThreshold then Htm.Actual else Htm.Potential})})})})}
+
+          pSynapseActiveStates region =
+              region{ Htm.columns = region |> Htm.columns |> map (\col ->
+                  col {Htm.proximalSynapses = col |> Htm.proximalSynapses |> map (\pSyn ->
+                      pSyn {Htm.pSynapseState = if Htm.pPermanence pSyn >= permThreshold then Htm.Actual else Htm.Potential})})}
+
+
+
+
+          createComplianceSettings = Htm.ComplianceSettings { Htm.permanenceBoost             = permChangeCompliance
                                                             , Htm.resetToFalse                = Htm.Modified -- Numenta implementation actually same as my modified version
                                                             , Htm.activeSegmentChoice         = Htm.Modified -- despite the fact that the pseudocode des not contain the changes
                                                             , Htm.boostDecrease               = boostDecCompliance
@@ -97,18 +115,18 @@ htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold 
                                                             , Htm.dendrtiteLearnState         = False
                                                             , Htm.dendriteId                  = ddId}
 
-          createDSynapses dsId      = Htm.DistalSynapse     { Htm.dInput                   = Htm.Off
+          createDSynapses dsId      = Htm.DistalSynapse     { Htm.dInput                      = Htm.Off
                                                             , Htm.dSynapseState               = Htm.Potential
                                                             , Htm.dPrevSynapseState           = Htm.Potential
-                                                            , Htm.dPermanence                 = getRnd stdGen [] (permThreshold - 0.01) (permThreshold - 0.001)
+                                                            , Htm.dPermanence                 = getRnd stdGen [] (permThreshold - 0.01) (permThreshold + 0.01)
                                                             , Htm.dOriginatingCell            = Htm.Cell False False False False False ([1..dDendrites] |> map createDDendrites) [] 0
                                                             , Htm.dSyanpseId                  = dsId}
                                                             {-temporary originating cell, replaced in last step of init-}
 
           createPSynapses psId      = Htm.ProximalSynapse   { Htm.pInput                      = Htm.Off
                                                             , Htm.pSynapseState               = Htm.Potential
-                                                            , Htm.pPermanence                 = getRnd stdGen [] (permThreshold - 0.01) (permThreshold - 0.001)
-                                                            , Htm.timeStepIndex               = getRnd stdGen [] 0 (timeStepSize - 1)
+                                                            , Htm.pPermanence                 = getRnd stdGen [] (permThreshold - 0.01) (permThreshold + 0.01)
+                                                            , Htm.timeStepIndex               = getRnd stdGen [] 0 (timeStepSize - 1) -- |> (\a -> trace (show a) a)
                                                             , Htm.pSynapseId                  = psId}
 
           setUpOriginatinCells region =

@@ -69,15 +69,16 @@ changeLearningState shouldLearn region = region {Htm.learningOn = shouldLearn}
 testRegion :: Htm.Region -> [[Htm.Input]] -> [Double]
 testRegion region testingData = timeStepTest testingData [] region
     where timeStepTest :: [[Htm.Input]] -> [Double] -> Htm.Region -> [Double]
+          timeStepTest [] results _ = results
           timeStepTest (timeStep:timeSteps) results reg =
               reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
-                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
+                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})} |> (\s -> trace (show s) s)
               |> spatialPooler
               |> temporalPooler
-              |> timeStepTest timeSteps ((noveltyRatio reg):results)
+              |> trace (((noveltyRatio reg):results)|> show |> (++ "\n\n")) (timeStepTest timeSteps ((noveltyRatio reg):results))
 
-          timeStepTest [] results _ = results
+
 
           noveltyRatio :: Htm.Region -> Double
           noveltyRatio reg =
@@ -93,7 +94,7 @@ trainRegion region trainingData reps = train reps region
     where train numOfReps reg =
               case numOfReps of
                   0 -> reg
-                  _ -> train (trace (show numOfReps) numOfReps - 1) (timeStepTrain trainingData reg)
+                  _ -> train (trace (show (numOfReps -1)) numOfReps - 1) (timeStepTrain trainingData reg)
 
           timeStepTrain (timeStep:timeSteps) reg =
               (reg {Htm.columns = reg |> Htm.columns |> map (\column ->

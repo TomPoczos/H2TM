@@ -33,7 +33,7 @@ import           Data.List.Split
 
 type NumOfThreads = Int
 
-data ParallelismMode  = Agressive | Limited NumOfThreads | None
+data ParallelismMode  = Agressive | Limited NumOfThreads | None deriving (Show)
 
 instance Eq ParallelismMode where
     Agressive == Agressive = True
