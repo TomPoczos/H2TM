@@ -31,6 +31,7 @@ module SpatialPooler
 import qualified CycleHistory        as Ch
 import           Data.List
 import           Data.Maybe
+import           Debug.Trace
 import           FlexibleParallelism
 import           Flow
 import qualified HtmData             as Htm
@@ -206,7 +207,7 @@ boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 boostPermanences region column = column {Htm.proximalSynapses = increasePermanences region column}
     where increasePermanences :: Htm.Region -> Htm.Column -> [Htm.ProximalSynapse]
           increasePermanences reg col = case reg |> Htm.complianceSettings |> Htm.permanenceBoost of
-              Htm.Compliant -> if False --(col |> Htm.overlapCycles |> Ch.activeCycle) < minDutyCycle
+              Htm.Compliant -> if (col |> Htm.overlapCycles |> Ch.activeCycle) < minDutyCycle
                                    then Htm.proximalSynapses col |> map increasePermanence
                                    else Htm.proximalSynapses col
               Htm.Modified  -> if (column |> Htm.overlapCycles |> Ch.activeCycle) < minOverlapCycle
@@ -236,24 +237,22 @@ boostPermanences region column = column {Htm.proximalSynapses = increasePermanen
 -- Top level function as it is used during multiple phases
 
 neighbours :: Htm.Region -> Htm.Column -> [Htm.Column]
-neighbours region column= filter withinInhibitionRadius $ Htm.columns region
+neighbours region column = region |> Htm.columns |> filter withinInhibitionRadius
     where
           -- Determines whether the column is within the inhibition radius of the column in question
 
           withinInhibitionRadius :: Htm.Column -> Bool
           withinInhibitionRadius potentialNeighbor
-              | isNothing $ indexOfColumn column            = False
-              | isNothing $ indexOfColumn potentialNeighbor = False
-              | potentialNeighbor == column                 = False
+        --      | isNothing $ indexOfColumn column            = False
+        --      | isNothing $ indexOfColumn potentialNeighbor = False
+              -- | potentialNeighbor == column                 = False
               -- FromJust can be used here safely as we already now that
               -- "indexOfColumn column" returns "Just Integer"
-              | abs  (fromJust (indexOfColumn column) - fromJust (indexOfColumn potentialNeighbor)) <= Htm.inhibitionRadius region = True
+              | abs (indexOfColumn column - indexOfColumn potentialNeighbor) <= Htm.inhibitionRadius region = True
               | otherwise = False
 
           -- Returns the index of column converted from Int to Integer
           -- Returns Nothing if the column is not in the list
 
-          indexOfColumn :: Htm.Column -> Maybe Integer
-          indexOfColumn c = case elemIndex c $ Htm.columns region of
-              Nothing -> Nothing
-              Just index -> Just (toInteger index)
+          indexOfColumn :: Htm.Column -> Integer
+          indexOfColumn c = c `elemIndex` Htm.columns region |> fromJust |> toInteger

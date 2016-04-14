@@ -1,6 +1,6 @@
 {-------------------------------------------------------------------------------
 H2TM: A Haskell HTM/CLA Implementation
-Copyright (C) 2016, Tom Poczos 
+Copyright (C) 2016, Tom Poczos
 
 Developed as part of a Final Year Project at Staffordshire University,
 United Kingdom by Tom Poczos under the supervision of Dr. Mohamed Sedky,
@@ -36,10 +36,10 @@ temporalPooler :: Htm.Region -> Htm.Region
 temporalPooler region = region {Htm.columns = runTemporalPooler}
     where runTemporalPooler :: [Htm.Column]
           runTemporalPooler = Htm.columns region
-              |> flexibleParMap (Htm.parallelismMode region) (phase1 region)
-              |> flexibleParMap (Htm.parallelismMode region) (phase2 region)
-              |> flexibleParMap (Htm.parallelismMode region) (phase3 region)
-              |> flexibleParMap (Htm.parallelismMode region) resetQueuedSynapses
+               |> flexibleParMap (Htm.parallelismMode region) (phase1 region)
+               |> flexibleParMap (Htm.parallelismMode region) (phase2 region)
+               |> flexibleParMap (Htm.parallelismMode region) (phase3 region)
+               |> flexibleParMap (Htm.parallelismMode region) resetQueuedSynapses
 
 phase1 :: Htm.Region -> Htm.Column -> Htm.Column
 phase1 region column = if column |> columnPredictedInput
