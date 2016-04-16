@@ -28,6 +28,7 @@ import Debug.Trace
 import           CycleHistory
 import           Data.List
 import           Data.Maybe
+import           Data.UUID.Types
 import           FlexibleParallelism
 import           Flow
 import           HtmUtils
@@ -65,8 +66,8 @@ htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold 
                                                             , Htm.complianceSettings          = createComplianceSettings
                                                             , Htm.parallelismMode             = parallelism
                                                             , Htm.learningOn                  = True
-                                                            , Htm.regionId                    = 1}
-                                                            |> setUpOriginatinCells
+                                                            , Htm.regionId                    = getUUID}
+                                                            !> setUpOriginatinCells
                                                             |> pSynapseActiveStates
                                                             |> dSynapseActiveStates
 
@@ -91,50 +92,63 @@ htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold 
                                                             , Htm.boostDecrease               = boostDecCompliance
                                                             }
 
-          createColumns colNum       = Htm.Column           { Htm.cells                       = [1..cells] |> map createCells
+          createColumns _       = Htm.Column           { Htm.cells                       = [1..cells] |> map createCells
                                                             , Htm.proximalSynapses            = [1..pSynapses] |> map createPSynapses
                                                             , Htm.boost                       = 0.3
                                                             , Htm.overlap                     = 0.2
-                                                            , Htm.columnId                    = colNum
+                                                            , Htm.columnId                    = getUUID
                                                             , Htm.dutyCycles                  = CycleHistory [] 0 1000
                                                             , Htm.overlapCycles               = CycleHistory [] 0 1000
                                                             , Htm.columnState                 = Htm.ActiveColumn }
 
-          createCells cellNum       = Htm.Cell              { Htm.cellPredictiveState         = False
+          createCells _       = Htm.Cell              { Htm.cellPredictiveState         = False
                                                             , Htm.cellLearnState              = False
                                                             , Htm.cellActiveState             = False
                                                             , Htm.cellPrevActiveState         = False
                                                             , Htm.cellPrevPredictiveState     = False
                                                             , Htm.distalDendrites             = [1..dDendrites] |> map createDDendrites
                                                             , Htm.queuedDistalSynapses        = []
-                                                            , Htm.cellId                      = cellNum}
+                                                            , Htm.cellId                      = getUUID}
 
-          createDDendrites ddId     = Htm.DistalDendrite    { Htm.distalSynapses              = [1..dSynapses] |> map createDSynapses
+          createDDendrites _     = Htm.DistalDendrite    { Htm.distalSynapses              = [1..dSynapses] |> map createDSynapses
                                                             , Htm.sequenceSegment             = False
                                                             , Htm.dendriteActiveState         = False
                                                             , Htm.dendrtiteLearnState         = False
-                                                            , Htm.dendriteId                  = ddId}
+                                                            , Htm.dendriteId                  = getUUID}
 
-          createDSynapses dsId      = Htm.DistalSynapse     { Htm.dInput                      = Htm.Off
+          createDSynapses _      = Htm.DistalSynapse     { Htm.dInput                      = Htm.Off
                                                             , Htm.dSynapseState               = Htm.Potential
                                                             , Htm.dPrevSynapseState           = Htm.Potential
                                                             , Htm.dPermanence                 = getRnd stdGen [] (permThreshold - 0.01) (permThreshold + 0.01)
-                                                            , Htm.dOriginatingCell            = Htm.Cell False False False False False ([1..dDendrites] |> map createDDendrites) [] 0
-                                                            , Htm.dSyanpseId                  = dsId}
+                                                            , Htm.dOriginatingCell            = Htm.Cell False False False False False ([1..dDendrites] |> map createDDendrites) [] getUUID
+                                                            , Htm.dSyanpseId                  = getUUID}
                                                             {-temporary originating cell, replaced in last step of init-}
 
-          createPSynapses psId      = Htm.ProximalSynapse   { Htm.pInput                      = Htm.Off
+          createPSynapses _      = Htm.ProximalSynapse   { Htm.pInput                      = Htm.Off
                                                             , Htm.pSynapseState               = Htm.Potential
                                                             , Htm.pPermanence                 = getRnd stdGen [] (permThreshold - 0.01) (permThreshold + 0.01)
                                                             , Htm.timeStepIndex               = getRnd stdGen [] 0 (timeStepSize - 1) -- |> (\a -> trace (show a) a)
-                                                            , Htm.pSynapseId                  = psId}
+                                                            , Htm.pSynapseId                  = getUUID}
 
           setUpOriginatinCells region =
                     region { Htm.columns = region |> Htm.columns |> map (\column ->
-                        column { Htm.cells = column |> Htm.cells |> map (\cell ->
-                            cell { Htm.distalDendrites = cell |> Htm.distalDendrites |> map (\dendrite ->
-                                dendrite { Htm.distalSynapses = dendrite |> Htm.distalSynapses |> map (\synapse ->
-                                    synapse{ Htm.dOriginatingCell =
-                                        region |> Htm.columns
-                                               |> concatMap Htm.cells
-                                               |> (\allCells -> allCells !! getRnd stdGen [fromJust $ elemIndex cell allCells] 0 (length allCells - 1))})})})})}
+                        column { Htm.cells = column |> Htm.cells |> (\columnsCells ->
+                            columnsCells |> map (\cell ->
+                                cell { Htm.distalDendrites = cell |> Htm.distalDendrites |> map (\dendrite ->
+                                    dendrite { Htm.distalSynapses = dendrite |> Htm.distalSynapses |> map (\synapse ->
+                                        synapse{ Htm.dOriginatingCell =
+                                            region |> Htm.columns
+                                                   |> map Htm.cells
+                                                   |> concat
+                                                 --  |> filter (flip elem columnsCells)
+                                                   |> (\allCells ->  (trace ("length: " ++ (show $ length allCells )) allCells)
+
+
+                                                    !! ((getRnd stdGen [] 0 (length allCells -1))
+
+
+
+                                                        |> (\ind -> trace ("Index: " ++ show ind) ind)
+
+
+                                                        ))})})}))})}

@@ -39,7 +39,7 @@ import qualified HtmData             as Htm
 
 spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region = region {Htm.columns = runSpatialPooler}
-    |> \r -> r {Htm.inhibitionRadius = newRadius r}
+    |> \r -> r {Htm.inhibitionRadius = newRadius r |> (trace ("Radius: " ++ show (newRadius r)))}
 
     -- The above is done in 2 steps to ensure inhibition radius is calculated
     -- after everything else the spatial pooler has to perform has been done.
@@ -58,7 +58,7 @@ spatialPooler region = region {Htm.columns = runSpatialPooler}
 
 newRadius :: Htm.Region -> Integer
 newRadius region = (numOfRegionsActiveSynapses / numOfRegionsSynapses) * numOfRegionsInputs
-    |> (\a -> trace ("numOfRegionsActiveSynapses: " ++ (show numOfRegionsActiveSynapses)
+    |> (\a -> traceStack ("numOfRegionsActiveSynapses: " ++ (show numOfRegionsActiveSynapses)
                     ++ "\nnumOfRegionsSynapses" ++ (show numOfRegionsSynapses)
                     ++ "\nnumOfRegionsInputs" ++ (show numOfRegionsInputs) ++"\n\n"
                         ) a)
@@ -207,9 +207,10 @@ boostColumn region column = column {Htm.boost = updateBoost}
           -- 1% of the highest DutyCycle of the column's neighbours' duty cycles
 
           minDutyCycle :: Double
-          minDutyCycle = 0.01 * (column |> neighbours region
-                                        |> map (Htm.dutyCycles .> Ch.activeCycle)
-                                        |> maximum)
+          minDutyCycle    = 0.01 * (column |> neighbours region
+                                           |> map Htm.dutyCycles
+                                           |> map Ch.activeCycle
+                                           |> maximum)
 
 boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 boostPermanences region column = column {Htm.proximalSynapses = increasePermanences region column}
@@ -233,11 +234,13 @@ boostPermanences region column = column {Htm.proximalSynapses = increasePermanen
 
           minDutyCycle :: Double
           minDutyCycle    = 0.01 * (column |> neighbours region
-                                           |> map (Htm.dutyCycles .> Ch.activeCycle)
+                                           |> map Htm.dutyCycles
+                                           |> map Ch.activeCycle
                                            |> maximum)
           minOverlapCycle :: Double
           minOverlapCycle = 0.01 * (column |> neighbours region
-                                           |> map (Htm.overlapCycles .> Ch.activeCycle)
+                                           |> map Htm.dutyCycles
+                                           |> map Ch.activeCycle
                                            |> maximum)
 
 
@@ -251,12 +254,9 @@ neighbours region column = region |> Htm.columns |> filter withinInhibitionRadiu
 
           withinInhibitionRadius :: Htm.Column -> Bool
           withinInhibitionRadius potentialNeighbor
-        --      | isNothing $ indexOfColumn column            = False
-        --      | isNothing $ indexOfColumn potentialNeighbor = False
-              | potentialNeighbor == column                 = False
-              -- FromJust can be used here safely as we already now that
-              -- "indexOfColumn column" returns "Just Integer"
-              | abs (indexOfColumn column - indexOfColumn potentialNeighbor) <= Htm.inhibitionRadius region = True
+              | potentialNeighbor == column = False
+              | abs (indexOfColumn column - indexOfColumn potentialNeighbor) <=
+                   trace ("Radius from neighbors" ++ (show $ Htm.inhibitionRadius region)) (Htm.inhibitionRadius region)  = True
               | otherwise = False
 
           -- Returns the index of column converted from Int to Integer

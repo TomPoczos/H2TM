@@ -45,6 +45,7 @@ module HtmData
 
 import           Control.DeepSeq
 import           CycleHistory
+import           Data.UUID.Types
 import           FlexibleParallelism
 
 type Permanence       = Double
@@ -82,7 +83,7 @@ data Cell             = Cell                 { cellPredictiveState         :: !B
                                              , cellPrevPredictiveState     :: !Bool
                                              , distalDendrites             :: ![DistalDendrite]
                                              , queuedDistalSynapses        :: ![DistalSynapse]
-                                             , cellId                      :: !Integer
+                                             , cellId                      :: !UUID
                                              } deriving (Show)
 
 data Column           = Column               { cells                       :: ![Cell]
@@ -92,14 +93,14 @@ data Column           = Column               { cells                       :: ![
                                              , dutyCycles                  :: !CycleHistory
                                              , overlapCycles               :: !CycleHistory
                                              , columnState                 :: !ColumnState
-                                             , columnId                    :: !Integer
+                                             , columnId                    :: !UUID
                                              } deriving (Show)
 
 data DistalDendrite  = DistalDendrite        { distalSynapses              :: ![DistalSynapse]
                                              , sequenceSegment             :: !Bool
                                              , dendriteActiveState         :: !Bool
                                              , dendrtiteLearnState         :: !Bool
-                                             , dendriteId                  :: !Integer
+                                             , dendriteId                  :: !UUID
                                              } deriving (Show)
 
 data DistalSynapse    = DistalSynapse        { dInput                      :: !Input
@@ -107,14 +108,14 @@ data DistalSynapse    = DistalSynapse        { dInput                      :: !I
                                              , dPrevSynapseState           :: !SynapseState
                                              , dPermanence                 :: !Permanence
                                              , dOriginatingCell            :: !Cell
-                                             , dSyanpseId                  :: !Integer
+                                             , dSyanpseId                  :: !UUID
                                              } deriving (Show)
 
 data ProximalSynapse  = ProximalSynapse      { pInput                      :: !Input
                                              , pSynapseState               :: !SynapseState
                                              , pPermanence                 :: !Permanence
                                              , timeStepIndex               :: !Int
-                                             , pSynapseId                  :: !Integer
+                                             , pSynapseId                  :: !UUID
                                              } deriving (Show)
 
 data Region           = Region               { columns                     :: ![Column]
@@ -130,7 +131,7 @@ data Region           = Region               { columns                     :: ![
                                              , complianceSettings          :: !ComplianceSettings
                                              , parallelismMode             :: !ParallelismMode
                                              , learningOn                  :: !Bool
-                                             , regionId                    :: !Integer
+                                             , regionId                    :: !UUID
                                              } deriving (Show)
 
 instance NFData Column
@@ -155,7 +156,7 @@ instance Eq Region where
     Region _ _ _ _ _ _ _ _ _ _ _ _ _ id1 == Region _ _ _ _ _ _ _ _ _ _ _ _ _ id2 = id1 == id2
 
 instance Eq Cell where
-    Cell _ _ _ _ _ _ _ id1== Cell _ _ _ _ _ _ _ id2 = id1 == id2
+    Cell _ _ _ _ _ _ _ id1 == Cell _ _ _ _ _ _ _ id2 = id1 == id2
 
 instance Eq DistalDendrite where
     DistalDendrite _ _ _ _ id1 == DistalDendrite _ _ _ _ id2 = id1 == id2

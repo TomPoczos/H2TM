@@ -37,6 +37,7 @@ import           System.IO
 import           System.Random
 import           TemporalPooler
 import           SpatialPooler
+import Control.Exception
 
 main :: IO ()
 main = do
@@ -53,9 +54,11 @@ main = do
     testingFileH   <- settings |> lines |> setup stdGen |> sel4 |> flip openFile ReadMode
     repetitions    <- settings |> lines |> setup stdGen |> sel5 |> return
     trainingString <- hGetContents trainingFileH
+    -- print trainingString
     trainingData   <- trainingString |> processData |> return
     trainedRegion  <- trainRegion region trainingData repetitions |> changeLearningState learning |> return
     testingString  <- hGetContents testingFileH
+    -- print testingString
     testingData    <- testingString |> processData |> return
 
     print $ testRegion trainedRegion testingData
@@ -73,9 +76,9 @@ testRegion region testingData = timeStepTest testingData [] region
           timeStepTest (timeStep:timeSteps) results reg =
               reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
-                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})} |> (\s -> trace (show s) s)
-              |> spatialPooler
-              |> temporalPooler
+                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
+              |> spatialPooler -- |> traceStack "TEST - SP"
+              |> temporalPooler -- |> traceStack "TEST - TP"
               |> trace (((noveltyRatio reg):results)|> show |> (++ "\n\n")) (timeStepTest timeSteps ((noveltyRatio reg):results))
 
 
@@ -94,17 +97,18 @@ trainRegion region trainingData reps = train reps region
     where train numOfReps reg =
               case numOfReps of
                   0 -> reg
-                  _ -> train (trace (show (numOfReps -1)) numOfReps - 1) (timeStepTrain trainingData reg)
+                  _ -> train  (numOfReps - 1) (timeStepTrain trainingData reg)
 
+          timeStepTrain [] reg = reg
           timeStepTrain (timeStep:timeSteps) reg =
               (reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
                       synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})})
-              |> spatialPooler
-              |> temporalPooler
+              |> spatialPooler -- |> traceStack ("TRAIN - SP" ++ (show reps))
+              |> temporalPooler -- |> traceStack ("TRAIN - TP" ++ (show reps))
               |> timeStepTrain timeSteps
 
-          timeStepTrain [] reg = reg
+
 
 processData :: String -> [[Htm.Input]]
 processData dataString =
