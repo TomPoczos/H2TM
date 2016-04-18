@@ -77,8 +77,8 @@ testRegion region testingData = timeStepTest testingData [] region
               reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
                       synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
-              |> spatialPooler -- |> traceStack "TEST - SP"
-              |> temporalPooler -- |> traceStack "TEST - TP"
+              |> spatialPooler  |> traceStack "TEST - SP"
+              |> temporalPooler  |> traceStack "TEST - TP"
               |> trace (((noveltyRatio reg):results)|> show |> (++ "\n\n")) (timeStepTest timeSteps ((noveltyRatio reg):results))
 
 
@@ -104,8 +104,8 @@ trainRegion region trainingData reps = train reps region
               (reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
                       synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})})
-              |> spatialPooler -- |> traceStack ("TRAIN - SP" ++ (show reps))
-              |> temporalPooler -- |> traceStack ("TRAIN - TP" ++ (show reps))
+              |> spatialPooler  |> traceStack ("TRAIN - SP" ++ (show reps))
+              |> temporalPooler  |> traceStack ("TRAIN - TP" ++ (show reps))
               |> timeStepTrain timeSteps
 
 

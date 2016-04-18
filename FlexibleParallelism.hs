@@ -33,13 +33,7 @@ import           Data.List.Split
 
 type NumOfThreads = Int
 
-data ParallelismMode  = Agressive | Limited NumOfThreads | None deriving (Show)
-
-instance Eq ParallelismMode where
-    Agressive == Agressive = True
-    None == None = True
-    Limited num1 == Limited num2 = num1 == num2
-    _ == _ = False
+data ParallelismMode  = Agressive | Limited NumOfThreads | None deriving (Eq, Show)
 
 -- maps the function to the list parallely in a way so that only the specified number of threads is created
 

@@ -254,7 +254,7 @@ neighbours region column = region |> Htm.columns |> filter withinInhibitionRadiu
 
           withinInhibitionRadius :: Htm.Column -> Bool
           withinInhibitionRadius potentialNeighbor
-              | potentialNeighbor == column = False
+              -- | potentialNeighbor == column = False
               | abs (indexOfColumn column - indexOfColumn potentialNeighbor) <=
                    trace ("Radius from neighbors" ++ (show $ Htm.inhibitionRadius region)) (Htm.inhibitionRadius region)  = True
               | otherwise = False
