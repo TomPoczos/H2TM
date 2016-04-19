@@ -1,6 +1,6 @@
-400
+50
 5
-20
+5
 5
 5
 50
@@ -8,7 +8,7 @@
 False
 Compliant
 Compliant
-None
-Input.csv
-Input.csv
+Agressive
+trainingset.csv
+testingset.csv
 3

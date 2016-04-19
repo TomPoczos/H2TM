@@ -76,10 +76,10 @@ testRegion region testingData = timeStepTest testingData [] region
           timeStepTest (timeStep:timeSteps) results reg =
               reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
-                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
+                      synapse{Htm.pInput = timeStep !! (Htm.timeStepIndex synapse)})})}
               |> spatialPooler  |> traceStack "TEST - SP"
               |> temporalPooler  |> traceStack "TEST - TP"
-              |> trace (((noveltyRatio reg):results)|> show |> (++ "\n\n")) (timeStepTest timeSteps ((noveltyRatio reg):results))
+              |> {-trace (((noveltyRatio reg):results)|> show |> (++ "\n\n")) -} (timeStepTest timeSteps ((noveltyRatio reg):results))
 
 
 
@@ -95,7 +95,7 @@ testRegion region testingData = timeStepTest testingData [] region
 trainRegion :: Htm.Region -> [[Htm.Input]] -> Int -> Htm.Region
 trainRegion region trainingData reps = train reps region
     where train numOfReps reg =
-              case numOfReps of
+              case traceShow numOfReps numOfReps of
                   0 -> reg
                   _ -> train  (numOfReps - 1) (timeStepTrain trainingData reg)
 
@@ -103,8 +103,8 @@ trainRegion region trainingData reps = train reps region
           timeStepTrain (timeStep:timeSteps) reg =
               (reg {Htm.columns = reg |> Htm.columns |> map (\column ->
                   column {Htm.proximalSynapses = column |> Htm.proximalSynapses |> map (\synapse ->
-                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})})
-              |> spatialPooler  |> traceStack ("TRAIN - SP" ++ (show reps))
+                      synapse{Htm.pInput = timeStep !! {-traceShow (Htm.timeStepIndex synapse)-} (Htm.timeStepIndex synapse)})})})
+              |> spatialPooler   |> traceStack ("TRAIN - SP" ++ (show reps))
               |> temporalPooler  |> traceStack ("TRAIN - TP" ++ (show reps))
               |> timeStepTrain timeSteps
 
@@ -118,7 +118,7 @@ processData dataString =
                |> map (map (\element ->
                           case Text.unpack element of
                               "1" -> Htm.On
-                              "0" -> Htm.Off))
+                              _ -> Htm.Off))
 
 setup :: StdGen -> [String] -> (Htm.Region, Bool, String, String, Int)
 setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold,learning,permCompl,boostComp,parallelism,trainingFile,testingFile,learningRepetitions] =

@@ -140,15 +140,15 @@ htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold 
                                             region |> Htm.columns
                                                    |> map Htm.cells
                                                    |> concat
-                                                 --  |> filter (flip elem columnsCells)
-                                                   |> (\allCells ->  (trace ("length: " ++ (show $ length allCells )) allCells)
+                                                  -- |> filter (flip notElem columnsCells)
+                                                   |> (\allCells ->  {-(trace ("length: " ++ (show $ length allCells ))-} allCells -- )
 
 
                                                     !! ((getRnd stdGen [] 0 (length allCells -1))
 
 
 
-                                                        |> (\ind -> trace ("Index: " ++ show ind) ind)
+                                                        -- |> (\ind -> trace ("Index: " ++ show ind) ind)
 
 
                                                         ))})})}))})}
