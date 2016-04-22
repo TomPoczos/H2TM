@@ -60,7 +60,7 @@ spatialPooler region = region {Htm.columns = runSpatialPooler}
                                        !> flexibleParMap (Htm.parallelismMode region) (boostPermanences region))
 
 
--- Calculates the nwe inhibition radius for the region. Based on Numenta's Matlab
+-- Calculates the new inhibition radius for the region. Based on Numenta's Matlab
 -- implementation rather than the description in Numenta's HTM paper
 
 newRadius :: Htm.Region -> Integer
@@ -230,14 +230,12 @@ boostPermanences region column = column {Htm.proximalSynapses = increasePermanen
 
 neighbours :: Htm.Region -> Htm.Column -> [Htm.Column]
 neighbours region column = region !> Htm.columns !> filter withinInhibitionRadius
-    where
           -- Determines whether the column is within the inhibition radius of the column in question
-
-          withinInhibitionRadius :: Htm.Column -> Bool
+    where withinInhibitionRadius :: Htm.Column -> Bool
           withinInhibitionRadius potentialNeighbor
               -- | potentialNeighbor == column = False
               | abs (indexOfColumn column - indexOfColumn potentialNeighbor) <=
-                   {-trace ("Radius from neighbors" ++ (show $ Htm.inhibitionRadius region))-} (Htm.inhibitionRadius region)  = True
+                  (Htm.inhibitionRadius region)  = True
               | otherwise = False
 
           -- Returns the index of column converted from Int to Integer

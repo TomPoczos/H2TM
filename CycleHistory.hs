@@ -49,4 +49,4 @@ add val ch
                                                  (maxAmount ch)
 
 activeCycle :: CycleHistory -> Double
-activeCycle ch = fromIntegral (values ch |> filter (== True) |> length) / fromIntegral (numOfVals ch)
+activeCycle ch = fromIntegral (values ch !> filter (== True) !> length) / fromIntegral (numOfVals ch)

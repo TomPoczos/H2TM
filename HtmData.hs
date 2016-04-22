@@ -135,6 +135,19 @@ data Region           = Region               { columns                     :: ![
                                              } deriving (Show)
 
 instance NFData Column
+instance NFData Region
+instance NFData Cell
+instance NFData DistalDendrite
+instance NFData DistalSynapse
+instance NFData ProximalSynapse
+instance NFData ComplianceSettings
+instance NFData ComplianceOption
+instance NFData Input
+instance NFData SynapseState
+instance NFData ColumnState
+instance NFData CellState
+instance NFData AcquisitionTime
+
 
 instance Eq DistalSynapse where
     DistalSynapse _ _ _ _ _ id1 == DistalSynapse _ _ _ _ _ id2 = id1 == id2
