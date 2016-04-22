@@ -127,6 +127,7 @@ setActiveState region column =
           isWinner c = Htm.overlap c > 0.0
                     && Htm.overlap c >= (c !> neighbours region
                                            !> sortBy compareOverlaps
+                                           !> reverse
                                            !> drop ((Htm.desiredLocalActivity region -1) !> fromInteger :: Int)
                                            !> head
                                            !> Htm.overlap)
