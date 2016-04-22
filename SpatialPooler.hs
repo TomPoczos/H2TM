@@ -39,7 +39,10 @@ import qualified HtmData             as Htm
 
 spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region = region {Htm.columns = runSpatialPooler}
-    !> \r -> r {Htm.inhibitionRadius = newRadius r}
+    |> (\reg ->
+        if not $ Htm.learningOn reg
+            then reg
+            else reg {Htm.inhibitionRadius = newRadius reg})
 
     -- The above is done in 2 steps to ensure inhibition radius is calculated
     -- after everything else the spatial pooler has to perform has been done.
@@ -49,22 +52,21 @@ spatialPooler region = region {Htm.columns = runSpatialPooler}
           runSpatialPooler = Htm.columns region
               !> flexibleParMap (Htm.parallelismMode region) (region !> Htm.minimumOverlap !> updateOverlap)
               !> flexibleParMap (Htm.parallelismMode region) (setActiveState region)
-              !> flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
-              !> flexibleParMap (Htm.parallelismMode region) (boostColumn region)
-              !> flexibleParMap (Htm.parallelismMode region) (boostPermanences region)
+              |> (\columns ->
+                      if not $ Htm.learningOn region
+                          then columns
+                          else columns !> flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
+                                       !> flexibleParMap (Htm.parallelismMode region) (boostColumn region)
+                                       !> flexibleParMap (Htm.parallelismMode region) (boostPermanences region))
+
 
 -- Calculates the nwe inhibition radius for the region. Based on Numenta's Matlab
 -- implementation rather than the description in Numenta's HTM paper
 
 newRadius :: Htm.Region -> Integer
 newRadius region = (numOfRegionsActiveSynapses / numOfRegionsSynapses) * numOfRegionsInputs
-    {-!> (\a -> traceStack ("numOfRegionsActiveSynapses: " ++ (show numOfRegionsActiveSynapses)
-                    ++ "\nnumOfRegionsSynapses" ++ (show numOfRegionsSynapses)
-                    ++ "\nnumOfRegionsInputs" ++ (show numOfRegionsInputs) ++"\n\n"
-                        ) a) -}
     !> round
     !> min ((region !> Htm.columns !> length) - 1 !> toInteger)
-    -- !> (\a -> trace ("radius: " ++ (show a)) a)
     where numOfRegionsActiveSynapses :: Double
           numOfRegionsActiveSynapses = region !> Htm.columns
                                               !> concatMap Htm.proximalSynapses
@@ -144,12 +146,16 @@ adjustPermanences region activeColumn = case Htm.columnState activeColumn of
 
           changePermanence :: Htm.ProximalSynapse -> Htm.ProximalSynapse
           changePermanence synapse = case Htm.pSynapseState synapse of
-              Htm.Actual    -> synapse { Htm.pPermanence = synapse !> Htm.pPermanence !> increasePermanence
-                                       , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse !> Htm.pPermanence !> increasePermanence)
-                                            then Htm.Actual else Htm.Potential}
-              Htm.Potential -> synapse { Htm.pPermanence = synapse !> Htm.pPermanence !> decreasePermanence
-                                       , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse !> Htm.pPermanence !> decreasePermanence)
-                                            then Htm.Actual else Htm.Potential}
+              Htm.Actual    ->
+                  synapse { Htm.pPermanence = synapse !> Htm.pPermanence !> increasePermanence
+                          , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse !> Htm.pPermanence
+                                                                                       !> increasePermanence)
+                                then Htm.Actual else Htm.Potential}
+              Htm.Potential ->
+                  synapse { Htm.pPermanence = synapse !> Htm.pPermanence !> decreasePermanence
+                          , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse !> Htm.pPermanence
+                                                                                       !> decreasePermanence)
+                                then Htm.Actual else Htm.Potential}
 
           -- increases permanence based on the region's permanenceInc value
 
@@ -167,11 +173,11 @@ adjustPermanences region activeColumn = case Htm.columnState activeColumn of
 boostColumn :: Htm.Region -> Htm.Column -> Htm.Column
 boostColumn region column = column {Htm.boost = updateBoost}
 
-    where -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
+          -- 1 if the column's activeDutyCycle is larger then its minDutyCycle
           -- otherwise the column's current boost is increased by a value specified
           -- on per region basis
 
-          updateBoost :: Double
+    where updateBoost :: Double
           updateBoost =
             if (column !> Htm.dutyCycles !> Ch.activeCycle) > minDutyCycle
                 then case region !> Htm.complianceSettings !> Htm.boostDecrease of
