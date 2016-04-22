@@ -126,17 +126,11 @@ setActiveState region column =
     where isWinner :: Htm.Column -> Bool
           isWinner c = Htm.overlap c > 0.0
                     && Htm.overlap c >= (c !> neighbours region
-                                           !> sortBy compareOverlaps
+                                           !> map Htm.overlap
+                                           !> sort
                                            !> reverse
                                            !> drop ((Htm.desiredLocalActivity region -1) !> fromInteger :: Int)
-                                           !> head
-                                           !> Htm.overlap)
-
-          compareOverlaps :: Htm.Column -> Htm.Column -> Ordering
-          compareOverlaps columnA columnB
-              | Htm.overlap columnA < Htm.overlap columnB                = LT
-              | Htm.overlap columnA > Htm.overlap columnB                = GT
-              | abs (Htm.overlap columnA - Htm.overlap columnB) <= 0.01 = EQ
+                                           !> head)
 
 -- PHASE 3.1: LEARNING
 -- returns a modified column with the permanence of each of its distal syanpses updated
