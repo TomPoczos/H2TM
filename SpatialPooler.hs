@@ -39,7 +39,7 @@ import qualified HtmData             as Htm
 
 spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region = region {Htm.columns = runSpatialPooler}
-    !> \r -> r {Htm.inhibitionRadius = newRadius r} -- !> (trace ("Radius: " ++ show (newRadius r)))}
+    !> \r -> r {Htm.inhibitionRadius = newRadius r}
 
     -- The above is done in 2 steps to ensure inhibition radius is calculated
     -- after everything else the spatial pooler has to perform has been done.
@@ -138,15 +138,9 @@ setActiveState region column =
 adjustPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 adjustPermanences region activeColumn = case Htm.columnState activeColumn of
     Htm.InactiveColumn -> activeColumn
-    Htm.ActiveColumn   -> activeColumn {Htm.proximalSynapses = activeColumn !> Htm.proximalSynapses !> modifySynapses }
+    Htm.ActiveColumn   -> activeColumn {Htm.proximalSynapses = activeColumn !> Htm.proximalSynapses !> map changePermanence }
 
-    where
-          -- changes permanence for all synapses in list base on their state
-
-          modifySynapses :: [Htm.ProximalSynapse] -> [Htm.ProximalSynapse]
-          modifySynapses = map changePermanence
-
-          -- changes the value of a synapse based on its state
+    where -- changes the value of a synapse based on its state
 
           changePermanence :: Htm.ProximalSynapse -> Htm.ProximalSynapse
           changePermanence synapse = case Htm.pSynapseState synapse of
