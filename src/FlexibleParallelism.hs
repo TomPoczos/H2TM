@@ -22,18 +22,24 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 -------------------------------------------------------------------------------}
 
+{-# LANGUAGE DeriveGeneric #-}
+
 module FlexibleParallelism
 ( flexibleParMap
 , ParallelismMode(..)
 , NumOfThreads
 ) where
 
+import           Control.DeepSeq
 import qualified Control.Monad.Par as Par
 import           Data.List.Split
+import           GHC.Generics
 
 type NumOfThreads = Int
 
-data ParallelismMode  = Agressive | Limited NumOfThreads | None deriving (Show, Eq)
+instance NFData ParallelismMode
+
+data ParallelismMode  = Agressive | Limited NumOfThreads | None deriving (Show, Eq, Generic)
 
 -- maps the function to the list parallely in a way so that only the specified number of threads is created
 

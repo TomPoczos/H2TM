@@ -76,7 +76,7 @@ testRegion region testingData = timeStepTest testingData [] region
               !> spatialPooler  !> traceStack "TEST - SP"
               !> temporalPooler  !> traceStack "TEST - TP"
               !> (timeStepTest timeSteps ((noveltyRatio reg):results))
-              
+
           noveltyRatio :: Htm.Region -> Double
           noveltyRatio reg =
               (reg !> Htm.columns

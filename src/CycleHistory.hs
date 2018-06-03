@@ -22,18 +22,24 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 -------------------------------------------------------------------------------}
 
+{-# LANGUAGE DeriveGeneric #-}
+
 module CycleHistory
     ( CycleHistory (CycleHistory)
     , activeCycle
     , add
     ) where
 
+import           Control.DeepSeq
 import           Flow
+import           GHC.Generics
 
 data CycleHistory = CycleHistory { values    :: [Bool]
                                  , numOfVals :: Int
                                  , maxAmount :: Int
-                                 } deriving (Show)
+                                 } deriving (Show, Generic)
+
+instance NFData CycleHistory
 
 instance Eq CycleHistory where
     CycleHistory a1 a2 a3 == CycleHistory b1 b2 b3 =

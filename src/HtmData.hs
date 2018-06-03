@@ -22,6 +22,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 -------------------------------------------------------------------------------}
 
+{-# LANGUAGE DeriveGeneric #-}
+
 module HtmData
 ( CellState          (..)
 , ColumnState        (..)
@@ -47,6 +49,7 @@ import           Control.DeepSeq
 import           CycleHistory
 import           Data.UUID.Types
 import           FlexibleParallelism
+import GHC.Generics
 
 type Permanence       = Double
 
@@ -58,23 +61,23 @@ type InhibitionRadius = Integer
 
 type Overlap          = Double
 
-data AcquisitionTime  = Current | Prev
+data AcquisitionTime  = Current | Prev deriving (Show, Generic)
 
-data CellState        = ActiveCell | PredictiveCell | InactiveCell
+data CellState        = ActiveCell | PredictiveCell | InactiveCell deriving (Show, Generic)
 
-data ColumnState      = ActiveColumn | InactiveColumn deriving (Show)
+data ColumnState      = ActiveColumn | InactiveColumn deriving (Show, Generic)
 
-data SynapseState     = Potential | Actual deriving (Show)
+data SynapseState     = Potential | Actual deriving (Show, Generic)
 
-data Input            = On | Off deriving (Show)
+data Input            = On | Off deriving (Show, Generic)
 
-data ComplianceOption = Compliant | Modified deriving (Show)
+data ComplianceOption = Compliant | Modified deriving (Show, Generic)
 
 data ComplianceSettings = ComplianceSettings { permanenceBoost             :: !ComplianceOption
                                              , resetToFalse                :: !ComplianceOption
                                              , activeSegmentChoice         :: !ComplianceOption
                                              , boostDecrease               :: !ComplianceOption
-                                             } deriving (Show)
+                                             } deriving (Show, Generic)
 
 data Cell             = Cell                 { cellPredictiveState         :: !Bool
                                              , cellLearnState              :: !Bool
@@ -84,7 +87,7 @@ data Cell             = Cell                 { cellPredictiveState         :: !B
                                              , distalDendrites             :: ![DistalDendrite]
                                              , queuedDistalSynapses        :: ![DistalSynapse]
                                              , cellId                      :: !UUID
-                                             } deriving (Show)
+                                             } deriving (Show, Generic)
 
 data Column           = Column               { cells                       :: ![Cell]
                                              , proximalSynapses            :: ![ProximalSynapse]
@@ -94,14 +97,14 @@ data Column           = Column               { cells                       :: ![
                                              , overlapCycles               :: !CycleHistory
                                              , columnState                 :: !ColumnState
                                              , columnId                    :: !UUID
-                                             } deriving (Show)
+                                             } deriving (Show, Generic)
 
 data DistalDendrite  = DistalDendrite        { distalSynapses              :: ![DistalSynapse]
                                              , sequenceSegment             :: !Bool
                                              , dendriteActiveState         :: !Bool
                                              , dendrtiteLearnState         :: !Bool
                                              , dendriteId                  :: !UUID
-                                             } deriving (Show)
+                                             } deriving (Show, Generic)
 
 data DistalSynapse    = DistalSynapse        { dInput                      :: !Input
                                              , dSynapseState               :: !SynapseState
@@ -109,14 +112,14 @@ data DistalSynapse    = DistalSynapse        { dInput                      :: !I
                                              , dPermanence                 :: !Permanence
                                              , dOriginatingCell            :: !Cell
                                              , dSyanpseId                  :: !UUID
-                                             } deriving (Show)
+                                             } deriving (Show, Generic)
 
 data ProximalSynapse  = ProximalSynapse      { pInput                      :: !Input
                                              , pSynapseState               :: !SynapseState
                                              , pPermanence                 :: !Permanence
                                              , timeStepIndex               :: !Int
                                              , pSynapseId                  :: !UUID
-                                             } deriving (Show)
+                                             } deriving (Show, Generic)
 
 data Region           = Region               { columns                     :: ![Column]
                                              , desiredLocalActivity        :: !LocalActivity
@@ -132,7 +135,7 @@ data Region           = Region               { columns                     :: ![
                                              , parallelismMode             :: !ParallelismMode
                                              , learningOn                  :: !Bool
                                              , regionId                    :: !UUID
-                                             } deriving (Show)
+                                             } deriving (Show, Generic)
 
 instance NFData Column
 instance NFData Region

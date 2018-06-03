@@ -1,0 +1,95 @@
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: d9ff57933f6563db9776a816985535d0e540bd90d63fd5ba89129e77e4af7603
+
+name:           H2TM
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/H2TM#readme>
+homepage:       https://github.com/githubuser/H2TM#readme
+bug-reports:    https://github.com/githubuser/H2TM/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2018 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    ChangeLog.md
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/H2TM
+
+library
+  exposed-modules:
+      CycleHistory
+      FlexibleParallelism
+      HtmData
+      HtmInit
+      HtmUtils
+      Lib
+      SpatialPooler
+      TemporalPooler
+  other-modules:
+      Paths_H2TM
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , deepseq
+    , flow
+    , monad-par
+    , random
+    , split
+    , text
+    , tuple
+    , uuid
+    , uuid-types
+  default-language: Haskell2010
+
+executable H2TM-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_H2TM
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      H2TM
+    , base >=4.7 && <5
+    , deepseq
+    , flow
+    , monad-par
+    , random
+    , split
+    , text
+    , tuple
+    , uuid
+    , uuid-types
+  default-language: Haskell2010
+
+test-suite H2TM-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_H2TM
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      H2TM
+    , base >=4.7 && <5
+    , deepseq
+    , flow
+    , monad-par
+    , random
+    , split
+    , text
+    , tuple
+    , uuid
+    , uuid-types
+  default-language: Haskell2010
