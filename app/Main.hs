@@ -48,7 +48,7 @@ main = do
     settingsPath   <- getLine
     settings       <- readFile settingsPath
     stdGen         <- newStdGen
-    region         <- settings & lines & setup stdGen & sel1 & return
+    region         <- settings & lines & setup stdGen & sel1
     learning       <- settings & lines & setup stdGen & sel2 & return
     trainingFileH  <- settings & lines & setup stdGen & sel3 & flip openFile ReadMode
     testingFileH   <- settings & lines & setup stdGen & sel4 & flip openFile ReadMode
@@ -116,7 +116,7 @@ processData dataString =
                               "1" -> Htm.On
                               _   -> Htm.Off))
 
-setup :: StdGen -> [String] -> (Htm.Region, Bool, String, String, Int)
+setup :: StdGen -> [String] -> (IO Htm.Region, Bool, String, String, Int)
 setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold
              ,learning,permCompl,boostComp,parallelism,trainingFile
              ,testingFile,learningRepetitions] =
