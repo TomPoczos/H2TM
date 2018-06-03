@@ -33,13 +33,13 @@ import           Data.List
 import           Data.Maybe
 import           Debug.Trace
 import           FlexibleParallelism
-import           Flow
+import           Data.Function
 import qualified HtmData             as Htm
 
 
 spatialPooler :: Htm.Region -> Htm.Region
 spatialPooler region = region {Htm.columns = runSpatialPooler}
-    |> (\reg ->
+    & (\reg ->
         if not $ Htm.learningOn reg
             then reg
             else reg {Htm.inhibitionRadius = newRadius reg})
@@ -50,14 +50,14 @@ spatialPooler region = region {Htm.columns = runSpatialPooler}
 
     where runSpatialPooler :: [Htm.Column]
           runSpatialPooler = Htm.columns region
-              !> flexibleParMap (Htm.parallelismMode region) (region !> Htm.minimumOverlap !> updateOverlap)
-              !> flexibleParMap (Htm.parallelismMode region) (setActiveState region)
-              |> (\columns ->
+              & flexibleParMap (Htm.parallelismMode region) (region & Htm.minimumOverlap & updateOverlap)
+              & flexibleParMap (Htm.parallelismMode region) (setActiveState region)
+              & (\columns ->
                       if not $ Htm.learningOn region
                           then columns
-                          else columns !> flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
-                                       !> flexibleParMap (Htm.parallelismMode region) (boostColumn region)
-                                       !> flexibleParMap (Htm.parallelismMode region) (boostPermanences region))
+                          else columns & flexibleParMap (Htm.parallelismMode region) (adjustPermanences region)
+                                       & flexibleParMap (Htm.parallelismMode region) (boostColumn region)
+                                       & flexibleParMap (Htm.parallelismMode region) (boostPermanences region))
 
 
 -- Calculates the new inhibition radius for the region. Based on Numenta's Matlab
@@ -65,29 +65,29 @@ spatialPooler region = region {Htm.columns = runSpatialPooler}
 
 newRadius :: Htm.Region -> Integer
 newRadius region = (numOfRegionsActiveSynapses / numOfRegionsSynapses) * numOfRegionsInputs
-    !> round
-    !> min ((region !> Htm.columns !> length) - 1 !> toInteger)
+    & round
+    & min ((region & Htm.columns & length) - 1 & toInteger)
     where numOfRegionsActiveSynapses :: Double
-          numOfRegionsActiveSynapses = region !> Htm.columns
-                                              !> concatMap Htm.proximalSynapses
-                                              !> map Htm.pSynapseState
-                                              !> filter (== Htm.Actual)
-                                              !> length
-                                              !> fromIntegral :: Double
+          numOfRegionsActiveSynapses = region & Htm.columns
+                                              & concatMap Htm.proximalSynapses
+                                              & map Htm.pSynapseState
+                                              & filter (== Htm.Actual)
+                                              & length
+                                              & fromIntegral :: Double
 
           numOfRegionsSynapses       :: Double
-          numOfRegionsSynapses       = region !> Htm.columns
-                                              !> concatMap Htm.proximalSynapses
-                                              !> length
-                                              !> fromIntegral :: Double
+          numOfRegionsSynapses       = region & Htm.columns
+                                              & concatMap Htm.proximalSynapses
+                                              & length
+                                              & fromIntegral :: Double
 
           numOfRegionsInputs         :: Double
-          numOfRegionsInputs         = region !> Htm.columns
-                                              !> concatMap Htm.proximalSynapses
-                                              !> map Htm.pInput
-                                              !> filter (== Htm.On)
-                                              !> length
-                                              !> fromIntegral :: Double
+          numOfRegionsInputs         = region & Htm.columns
+                                              & concatMap Htm.proximalSynapses
+                                              & map Htm.pInput
+                                              & filter (== Htm.On)
+                                              & length
+                                              & fromIntegral :: Double
 
 -- PHASE 1: OVERLAP
 
@@ -95,19 +95,19 @@ updateOverlap :: Htm.Overlap -> Htm.Column -> Htm.Column
 updateOverlap minOverlap column =
     if rawOverlap < minOverlap
         then column { Htm.overlap       = 0
-                    , Htm.overlapCycles = column !> Htm.overlapCycles !> Ch.add False }
+                    , Htm.overlapCycles = column & Htm.overlapCycles & Ch.add False }
         else column { Htm.overlap       = rawOverlap * Htm.boost column
-                    , Htm.overlapCycles = column !> Htm.overlapCycles !> Ch.add True }
+                    , Htm.overlapCycles = column & Htm.overlapCycles & Ch.add True }
 
     where
           -- The number of distal synapses with that ar active AND connected to the column
 
           rawOverlap :: Htm.Overlap
-          rawOverlap = column !> Htm.proximalSynapses
-                              !> filter (\syn ->
+          rawOverlap = column & Htm.proximalSynapses
+                              & filter (\syn ->
                                     Htm.pSynapseState syn == Htm.Actual && Htm.pInput syn == Htm.On)
-                              !> length
-                              !> fromIntegral :: Double
+                              & length
+                              & fromIntegral :: Double
 
 -- PHASE 2: INHIBITION
 -- The list of columns within the inhibition radius of the column in question
@@ -116,9 +116,9 @@ updateOverlap minOverlap column =
 setActiveState :: Htm.Region -> Htm.Column -> Htm.Column
 setActiveState region column =
     if isWinner column
-        then column { Htm.dutyCycles  = column !> Htm.dutyCycles !> Ch.add True
+        then column { Htm.dutyCycles  = column & Htm.dutyCycles & Ch.add True
                     , Htm.columnState = Htm.ActiveColumn}
-        else column { Htm.dutyCycles  = column !> Htm.dutyCycles !> Ch.add False
+        else column { Htm.dutyCycles  = column & Htm.dutyCycles & Ch.add False
                     , Htm.columnState = Htm.InactiveColumn}
 
           -- Determines whether the column's overlap is larger than 0 and
@@ -127,12 +127,12 @@ setActiveState region column =
 
     where isWinner :: Htm.Column -> Bool
           isWinner c = Htm.overlap c > 0.0
-                    && Htm.overlap c >= (c !> neighbours region
-                                           !> map Htm.overlap
-                                           !> sort
-                                           !> reverse
-                                           !> drop ((Htm.desiredLocalActivity region -1) !> fromInteger :: Int)
-                                           !> head)
+                    && Htm.overlap c >= (c & neighbours region
+                                           & map Htm.overlap
+                                           & sort
+                                           & reverse
+                                           & drop ((Htm.desiredLocalActivity region -1) & fromInteger :: Int)
+                                           & head)
 
 -- PHASE 3.1: LEARNING
 -- returns a modified column with the permanence of each of its distal syanpses updated
@@ -140,21 +140,21 @@ setActiveState region column =
 adjustPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 adjustPermanences region activeColumn = case Htm.columnState activeColumn of
     Htm.InactiveColumn -> activeColumn
-    Htm.ActiveColumn   -> activeColumn {Htm.proximalSynapses = activeColumn !> Htm.proximalSynapses !> map changePermanence }
+    Htm.ActiveColumn   -> activeColumn {Htm.proximalSynapses = activeColumn & Htm.proximalSynapses & map changePermanence }
 
     where -- changes the value of a synapse based on its state
 
           changePermanence :: Htm.ProximalSynapse -> Htm.ProximalSynapse
           changePermanence synapse = case Htm.pSynapseState synapse of
               Htm.Actual    ->
-                  synapse { Htm.pPermanence = synapse !> Htm.pPermanence !> increasePermanence
-                          , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse !> Htm.pPermanence
-                                                                                       !> increasePermanence)
+                  synapse { Htm.pPermanence = synapse & Htm.pPermanence & increasePermanence
+                          , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse & Htm.pPermanence
+                                                                                       & increasePermanence)
                                 then Htm.Actual else Htm.Potential}
               Htm.Potential ->
-                  synapse { Htm.pPermanence = synapse !> Htm.pPermanence !> decreasePermanence
-                          , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse !> Htm.pPermanence
-                                                                                       !> decreasePermanence)
+                  synapse { Htm.pPermanence = synapse & Htm.pPermanence & decreasePermanence
+                          , Htm.pSynapseState = if Htm.pPermanence synapse >= (synapse & Htm.pPermanence
+                                                                                       & decreasePermanence)
                                 then Htm.Actual else Htm.Potential}
 
           -- increases permanence based on the region's permanenceInc value
@@ -179,8 +179,8 @@ boostColumn region column = column {Htm.boost = updateBoost}
 
     where updateBoost :: Double
           updateBoost =
-            if (column !> Htm.dutyCycles !> Ch.activeCycle) > minDutyCycle
-                then case region !> Htm.complianceSettings !> Htm.boostDecrease of
+            if (column & Htm.dutyCycles & Ch.activeCycle) > minDutyCycle
+                then case region & Htm.complianceSettings & Htm.boostDecrease of
                     Htm.Compliant -> 1
                     Htm.Modified  -> Htm.boost column - Htm.boostInc region
                 else Htm.boost column + Htm.boostInc region
@@ -188,20 +188,20 @@ boostColumn region column = column {Htm.boost = updateBoost}
           -- 1% of the highest DutyCycle of the column's neighbours' duty cycles
 
           minDutyCycle :: Double
-          minDutyCycle    = 0.01 * (column !> neighbours region
-                                           !> map Htm.dutyCycles
-                                           !> map Ch.activeCycle
-                                           !> maximum)
+          minDutyCycle    = 0.01 * (column & neighbours region
+                                           & map Htm.dutyCycles
+                                           & map Ch.activeCycle
+                                           & maximum)
 
 boostPermanences :: Htm.Region -> Htm.Column -> Htm.Column
 boostPermanences region column = column {Htm.proximalSynapses = increasePermanences region column}
     where increasePermanences :: Htm.Region -> Htm.Column -> [Htm.ProximalSynapse]
-          increasePermanences reg col = case reg !> Htm.complianceSettings !> Htm.permanenceBoost of
-              Htm.Compliant -> if (col !> Htm.overlapCycles !> Ch.activeCycle) < minDutyCycle
-                                   then Htm.proximalSynapses col !> map increasePermanence
+          increasePermanences reg col = case reg & Htm.complianceSettings & Htm.permanenceBoost of
+              Htm.Compliant -> if (col & Htm.overlapCycles & Ch.activeCycle) < minDutyCycle
+                                   then Htm.proximalSynapses col & map increasePermanence
                                    else Htm.proximalSynapses col
-              Htm.Modified  -> if (column !> Htm.overlapCycles !> Ch.activeCycle) < minOverlapCycle
-                                   then Htm.proximalSynapses column !> map increasePermanence
+              Htm.Modified  -> if (column & Htm.overlapCycles & Ch.activeCycle) < minOverlapCycle
+                                   then Htm.proximalSynapses column & map increasePermanence
                                    else Htm.proximalSynapses column
 
           increasePermanence synapse =
@@ -214,22 +214,22 @@ boostPermanences region column = column {Htm.proximalSynapses = increasePermanen
           increasedPermanence synapse = Htm.pPermanence synapse + 0.1 * Htm.permanenceThreshold region
 
           minDutyCycle :: Double
-          minDutyCycle    = 0.01 * (column !> neighbours region
-                                           !> map Htm.dutyCycles
-                                           !> map Ch.activeCycle
-                                           !> maximum)
+          minDutyCycle    = 0.01 * (column & neighbours region
+                                           & map Htm.dutyCycles
+                                           & map Ch.activeCycle
+                                           & maximum)
           minOverlapCycle :: Double
-          minOverlapCycle = 0.01 * (column !> neighbours region
-                                           !> map Htm.dutyCycles
-                                           !> map Ch.activeCycle
-                                           !> maximum)
+          minOverlapCycle = 0.01 * (column & neighbours region
+                                           & map Htm.dutyCycles
+                                           & map Ch.activeCycle
+                                           & maximum)
 
 
 -- The list of columns that are within the inhibition radius of the column in question
 -- Top level function as it is used during multiple phases
 
 neighbours :: Htm.Region -> Htm.Column -> [Htm.Column]
-neighbours region column = region !> Htm.columns !> filter withinInhibitionRadius
+neighbours region column = region & Htm.columns & filter withinInhibitionRadius
           -- Determines whether the column is within the inhibition radius of the column in question
     where withinInhibitionRadius :: Htm.Column -> Bool
           withinInhibitionRadius potentialNeighbor
@@ -242,4 +242,4 @@ neighbours region column = region !> Htm.columns !> filter withinInhibitionRadiu
           -- Returns Nothing if the column is not in the list
 
           indexOfColumn :: Htm.Column -> Integer
-          indexOfColumn c = c `elemIndex` Htm.columns region !> fromJust !> toInteger
+          indexOfColumn c = c `elemIndex` Htm.columns region & fromJust & toInteger

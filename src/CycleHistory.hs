@@ -31,7 +31,7 @@ module CycleHistory
     ) where
 
 import           Control.DeepSeq
-import           Flow
+import           Data.Function
 import           GHC.Generics
 
 data CycleHistory = CycleHistory { values    :: [Bool]
@@ -55,4 +55,4 @@ add val ch
                                                  (maxAmount ch)
 
 activeCycle :: CycleHistory -> Double
-activeCycle ch = fromIntegral (values ch !> filter (== True) !> length) / fromIntegral (numOfVals ch)
+activeCycle ch = fromIntegral (values ch & filter (== True) & length) / fromIntegral (numOfVals ch)

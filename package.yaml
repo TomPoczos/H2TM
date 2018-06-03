@@ -24,7 +24,6 @@ dependencies:
 - uuid
 - random
 - uuid-types
-- flow
 - monad-par
 - split
 - deepseq

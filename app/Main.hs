@@ -24,20 +24,20 @@ along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 
 module Main where
 
-import           Debug.Trace
-import           Data.Maybe
+import           Control.Exception
+import           Data.Function
 import           Data.List
+import           Data.Maybe
 import qualified Data.Text           as Text
 import           Data.Tuple.Select
+import           Debug.Trace
 import           FlexibleParallelism
-import           Flow
 import qualified HtmData             as Htm
 import           HtmInit
+import           SpatialPooler
 import           System.IO
 import           System.Random
 import           TemporalPooler
-import           SpatialPooler
-import Control.Exception
 
 main :: IO ()
 main = do
@@ -48,16 +48,16 @@ main = do
     settingsPath   <- getLine
     settings       <- readFile settingsPath
     stdGen         <- newStdGen
-    region         <- settings !> lines !> setup stdGen !> sel1 !> return
-    learning       <- settings !> lines !> setup stdGen !> sel2 !> return
-    trainingFileH  <- settings !> lines !> setup stdGen !> sel3 !> flip openFile ReadMode
-    testingFileH   <- settings !> lines !> setup stdGen !> sel4 !> flip openFile ReadMode
-    repetitions    <- settings !> lines !> setup stdGen !> sel5 !> return
+    region         <- settings & lines & setup stdGen & sel1 & return
+    learning       <- settings & lines & setup stdGen & sel2 & return
+    trainingFileH  <- settings & lines & setup stdGen & sel3 & flip openFile ReadMode
+    testingFileH   <- settings & lines & setup stdGen & sel4 & flip openFile ReadMode
+    repetitions    <- settings & lines & setup stdGen & sel5 & return
     trainingString <- hGetContents trainingFileH
-    trainingData   <- trainingString !> processData !> return
-    trainedRegion  <- trainRegion region trainingData repetitions !> changeLearningState learning !> return
+    trainingData   <- trainingString & processData & return
+    trainedRegion  <- trainRegion region trainingData repetitions & changeLearningState learning & return
     testingString  <- hGetContents testingFileH
-    testingData    <- testingString !> processData !> return
+    testingData    <- testingString & processData & return
     print $ testRegion trainedRegion testingData
     hClose trainingFileH
     hClose testingFileH
@@ -70,21 +70,21 @@ testRegion region testingData = timeStepTest testingData [] region
     where timeStepTest :: [[Htm.Input]] -> [Double] -> Htm.Region -> [Double]
           timeStepTest [] results _ = results
           timeStepTest (timeStep:timeSteps) results reg =
-              reg {Htm.columns = reg !> Htm.columns !> map (\column ->
-                  column {Htm.proximalSynapses = column !> Htm.proximalSynapses !> map (\synapse ->
+              reg {Htm.columns = reg & Htm.columns & map (\column ->
+                  column {Htm.proximalSynapses = column & Htm.proximalSynapses & map (\synapse ->
                       synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
-              !> spatialPooler  !> traceStack "TEST - SP"
-              !> temporalPooler  !> traceStack "TEST - TP"
-              !> timeStepTest timeSteps (noveltyRatio reg : results)
+              & spatialPooler  & traceStack "TEST - SP"
+              & temporalPooler  & traceStack "TEST - TP"
+              & timeStepTest timeSteps (noveltyRatio reg : results)
 
           noveltyRatio :: Htm.Region -> Double
           noveltyRatio reg =
-              (reg !> Htm.columns
-                     !> map Htm.cells
-                     !> filter (all Htm.cellActiveState)
-                     !> length
-                     !> fromIntegral :: Double)
-              / (reg !> Htm.columns !> length !> fromIntegral :: Double)
+              (reg & Htm.columns
+                     & map Htm.cells
+                     & filter (all Htm.cellActiveState)
+                     & length
+                     & fromIntegral :: Double)
+              / (reg & Htm.columns & length & fromIntegral :: Double)
 
 trainRegion :: Htm.Region -> [[Htm.Input]] -> Int -> Htm.Region
 trainRegion region trainingData reps = train reps region
@@ -97,24 +97,24 @@ trainRegion region trainingData reps = train reps region
           timeStepTrain :: [[Htm.Input]] -> Htm.Region -> Htm.Region
           timeStepTrain [] reg = reg
           timeStepTrain (timeStep:timeSteps) reg =
-              (reg {Htm.columns = reg !> Htm.columns !> map (\column ->
-                  column {Htm.proximalSynapses = column !> Htm.proximalSynapses !> map (\synapse ->
+              (reg {Htm.columns = reg & Htm.columns & map (\column ->
+                  column {Htm.proximalSynapses = column & Htm.proximalSynapses & map (\synapse ->
                       synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})})
-              !> spatialPooler   -- !> traceStack ("TRAIN - SP" ++ (show reps))
-              !> temporalPooler -- !> traceStack ("TRAIN - TP" ++ (show reps))
-              !> timeStepTrain timeSteps
+              & spatialPooler   -- & traceStack ("TRAIN - SP" ++ (show reps))
+              & temporalPooler -- & traceStack ("TRAIN - TP" ++ (show reps))
+              & timeStepTrain timeSteps
 
 
 
 processData :: String -> [[Htm.Input]]
 processData dataString =
-    dataString !> Text.pack
-               !> Text.lines
-               !> map (Text.splitOn (Text.pack ","))
-               !> map (map (\element ->
+    dataString & Text.pack
+               & Text.lines
+               & map (Text.splitOn (Text.pack ","))
+               & map (map (\element ->
                           case Text.unpack element of
                               "1" -> Htm.On
-                              _ -> Htm.Off))
+                              _   -> Htm.Off))
 
 setup :: StdGen -> [String] -> (Htm.Region, Bool, String, String, Int)
 setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold
