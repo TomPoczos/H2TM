@@ -235,7 +235,7 @@ neighbours region column = region !> Htm.columns !> filter withinInhibitionRadiu
           withinInhibitionRadius potentialNeighbor
               -- | potentialNeighbor == column = False
               | abs (indexOfColumn column - indexOfColumn potentialNeighbor) <=
-                  (Htm.inhibitionRadius region)  = True
+                  Htm.inhibitionRadius region = True
               | otherwise = False
 
           -- Returns the index of column converted from Int to Integer

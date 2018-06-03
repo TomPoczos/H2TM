@@ -144,11 +144,11 @@ htmInit columns cells pSynapses dDendrites dSynapses timeStepSize permThreshold 
                                                    !> (\allCells ->  {-(trace ("length: " ++ (show $ length allCells ))-} allCells -- )
 
 
-                                                    !! ((getRnd stdGen [] 0 (length allCells -1))
+                                                    !! getRnd stdGen [] 0 (length allCells -1))
 
 
 
                                                         -- !> (\ind -> trace ("Index: " ++ show ind) ind)
 
 
-                                                        ))})})}))})}
+                                                        })})}))})}

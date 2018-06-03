@@ -72,16 +72,16 @@ testRegion region testingData = timeStepTest testingData [] region
           timeStepTest (timeStep:timeSteps) results reg =
               reg {Htm.columns = reg !> Htm.columns !> map (\column ->
                   column {Htm.proximalSynapses = column !> Htm.proximalSynapses !> map (\synapse ->
-                      synapse{Htm.pInput = timeStep !! (Htm.timeStepIndex synapse)})})}
+                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})}
               !> spatialPooler  !> traceStack "TEST - SP"
               !> temporalPooler  !> traceStack "TEST - TP"
-              !> (timeStepTest timeSteps ((noveltyRatio reg):results))
+              !> timeStepTest timeSteps (noveltyRatio reg : results)
 
           noveltyRatio :: Htm.Region -> Double
           noveltyRatio reg =
               (reg !> Htm.columns
                      !> map Htm.cells
-                     !> filter (\cells -> all Htm.cellActiveState cells)
+                     !> filter (all Htm.cellActiveState)
                      !> length
                      !> fromIntegral :: Double)
               / (reg !> Htm.columns !> length !> fromIntegral :: Double)
@@ -99,7 +99,7 @@ trainRegion region trainingData reps = train reps region
           timeStepTrain (timeStep:timeSteps) reg =
               (reg {Htm.columns = reg !> Htm.columns !> map (\column ->
                   column {Htm.proximalSynapses = column !> Htm.proximalSynapses !> map (\synapse ->
-                      synapse{Htm.pInput = timeStep !! (Htm.timeStepIndex synapse)})})})
+                      synapse{Htm.pInput = timeStep !! Htm.timeStepIndex synapse})})})
               !> spatialPooler   -- !> traceStack ("TRAIN - SP" ++ (show reps))
               !> temporalPooler -- !> traceStack ("TRAIN - TP" ++ (show reps))
               !> timeStepTrain timeSteps
