@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6bf57a6b8d1e03b6599d7c1a55ff87a9b5b0b8d7eb1c8fccd416620d83ec3106
+-- hash: 864d58dc5b0251f51b4511d545351c31eaad700d0057f811d3942d8b0c755c31
 
 name:           H2TM
 version:        0.1.0.0
@@ -29,7 +29,6 @@ library
       CycleHistory
       FlexibleParallelism
       HtmData
-      HtmInit
       HtmUtils
       Lib
       SpatialPooler
@@ -53,6 +52,7 @@ library
 executable H2TM-exe
   main-is: Main.hs
   other-modules:
+      HtmInit
       Paths_H2TM
   hs-source-dirs:
       app
