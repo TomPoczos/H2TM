@@ -41,23 +41,23 @@ import           TemporalPooler
 
 main :: IO ()
 main = do
-    instrHandle    <- openFile "instructions.txt" ReadMode
-    instrContent   <- hGetContents instrHandle
+    instrHandle       <- openFile "instructions.txt" ReadMode
+    instrContent      <- hGetContents instrHandle
     putStrLn instrContent
     hClose instrHandle
-    settingsPath   <- getLine
-    settings       <- readFile settingsPath
-    stdGen         <- newStdGen
-    region         <- settings & lines & setup stdGen & sel1
-    learning       <- settings & lines & setup stdGen & sel2 & return
-    trainingFileH  <- settings & lines & setup stdGen & sel3 & flip openFile ReadMode
-    testingFileH   <- settings & lines & setup stdGen & sel4 & flip openFile ReadMode
-    repetitions    <- settings & lines & setup stdGen & sel5 & return
-    trainingString <- hGetContents trainingFileH
-    trainingData   <- trainingString & processData & return
-    trainedRegion  <- trainRegion region trainingData repetitions & changeLearningState learning & return
-    testingString  <- hGetContents testingFileH
-    testingData    <- testingString & processData & return
+    settingsPath      <- getLine
+    settings          <- readFile settingsPath
+    stdGen            <- newStdGen
+    region            <- settings & lines & setup stdGen & sel1
+    let learning      =  settings & lines & setup stdGen & sel2
+    trainingFileH     <- settings & lines & setup stdGen & sel3 & flip openFile ReadMode
+    testingFileH      <- settings & lines & setup stdGen & sel4 & flip openFile ReadMode
+    let repetitions   =  settings & lines & setup stdGen & sel5
+    trainingString    <- hGetContents trainingFileH
+    let trainingData  =  trainingString & processData
+    let trainedRegion =  trainRegion region trainingData repetitions & changeLearningState learning
+    testingString     <- hGetContents testingFileH
+    let testingData   =  testingString & processData
     print $ testRegion trainedRegion testingData
     hClose trainingFileH
     hClose testingFileH
@@ -121,26 +121,29 @@ setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold
              ,learning,permCompl,boostComp,parallelism,trainingFile
              ,testingFile,learningRepetitions] =
     case learning of
-        "True"  -> (createInitialRegion, True,  trainingFile, testingFile, read learningRepetitions :: Int)
-        "False" -> (createInitialRegion, False, trainingFile, testingFile, read learningRepetitions :: Int)
+        "True"  -> (htmInit config stdGen, True,  trainingFile, testingFile, read learningRepetitions)
+        "False" -> (htmInit config stdGen, False, trainingFile, testingFile, read learningRepetitions)
 
-    where createInitialRegion = htmInit (read cols :: Integer)
-                (read cells :: Integer)
-                (read psyn :: Integer)
-                (read dDend :: Integer)
-                (read dSyn :: Integer)
-                (read timeStepSize :: Int)
-                (read permThreshold :: Double)
-                (readComplianceOption permCompl)
-                (readComplianceOption boostComp)
-                (readParallelismMode parallelism)
-                stdGen
+    where
 
-          readComplianceOption :: String -> Htm.ComplianceOption
-          readComplianceOption "Compliant" = Htm.Compliant
-          readComplianceOption "Modified"  = Htm.Modified
+        config = HtmConfig {
+            numOfColumns           = read cols
+            , numOfCells           = read cells
+            , pSynapses            = read psyn
+            , numOfDDendrites      = read dDend
+            , dSynapses            = read dSyn
+            , timeStepSize         = read timeStepSize
+            , permThreshold        = read permThreshold
+            , permChangeCompliance = readComplianceOption permCompl
+            , boostDecCompliance   = readComplianceOption boostComp
+            , parallelism          = readParallelismMode parallelism }
 
-          readParallelismMode :: String -> ParallelismMode
-          readParallelismMode "None" = None
-          readParallelismMode "Agressive" = Agressive
-          readParallelismMode numOfThreads = Limited (read numOfThreads :: Int)
+        readComplianceOption :: String -> Htm.ComplianceOption
+        readComplianceOption "Compliant" = Htm.Compliant
+        readComplianceOption "Modified"  = Htm.Modified
+
+        readParallelismMode :: String -> ParallelismMode
+        readParallelismMode "None" = None
+        readParallelismMode "Agressive" = Agressive
+
+        readParallelismMode numOfThreads = Limited (read numOfThreads :: Int)
