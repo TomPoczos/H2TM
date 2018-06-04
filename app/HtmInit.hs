@@ -25,16 +25,16 @@ along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 module HtmInit (htmInit, HtmConfig(..) ) where
 
 import           Control.Monad
+import           Control.Monad.Random
 import           CycleHistory
 import           Data.Function
 import           Data.List
 import           Data.Maybe
 import           Data.UUID.Types
-import qualified Data.UUID.V4        as UUID
+import qualified Data.UUID.V4         as UUID
 import           Debug.Trace
 import           FlexibleParallelism
-import qualified HtmData             as Htm
-import           HtmUtils
+import qualified HtmData              as Htm
 import           System.Random
 
 -- always initialised with learning on, which is necessary for training
@@ -52,9 +52,9 @@ data HtmConfig = HtmConfig {
     , boostDecCompliance   :: Htm.ComplianceOption
     , parallelism          :: ParallelismMode }
 
-htmInit :: HtmConfig -> StdGen -> IO Htm.Region
-htmInit config stdGen = do
-    uuid    <- UUID.nextRandom
+htmInit :: HtmConfig -> RandT StdGen IO Htm.Region
+htmInit config = do
+    uuid    <- liftIO UUID.nextRandom
     columns <- traverse createColumn [1..numOfColumns config]
     let initialRegion = Htm.Region {
           Htm.columns                     = columns
@@ -75,7 +75,7 @@ htmInit config stdGen = do
 
     where
 
-        dSynapseActiveStates :: Htm.Region -> IO Htm.Region
+        dSynapseActiveStates :: Htm.Region -> RandT StdGen IO Htm.Region
         dSynapseActiveStates region = return
             region {Htm.columns = region & Htm.columns & map (\column ->
                 column {Htm.cells = column & Htm.cells & map (\cell ->
@@ -83,7 +83,7 @@ htmInit config stdGen = do
                         dendrite {Htm.distalSynapses = dendrite & Htm.distalSynapses & map (\dSyn ->
                         dSyn {Htm.dSynapseState = if Htm.dPermanence dSyn >= permThreshold config then Htm.Actual else Htm.Potential })})})})}
 
-        pSynapseActiveStates :: Htm.Region -> IO Htm.Region
+        pSynapseActiveStates :: Htm.Region -> RandT StdGen IO Htm.Region
         pSynapseActiveStates region = return
             region{ Htm.columns = region & Htm.columns & map (\col ->
                 col {Htm.proximalSynapses = col & Htm.proximalSynapses & map (\pSyn ->
@@ -95,9 +95,9 @@ htmInit config stdGen = do
             , Htm.activeSegmentChoice = Htm.Modified -- despite the fact that the pseudocode des not contain the changes
             , Htm.boostDecrease       = boostDecCompliance config }
 
-        createColumn :: a -> IO Htm.Column
+        createColumn :: a -> RandT StdGen IO Htm.Column
         createColumn _ = do
-          uuid             <- UUID.nextRandom
+          uuid             <- liftIO UUID.nextRandom
           cells            <- traverse createCells [1..numOfCells config]
           proximalSynapses <- traverse createPSynapses [1..pSynapses config]
           return Htm.Column {
@@ -110,9 +110,9 @@ htmInit config stdGen = do
               , Htm.overlapCycles    = CycleHistory [] 0 1000
               , Htm.columnState      = Htm.ActiveColumn }
 
-        createCells :: a -> IO Htm.Cell
+        createCells :: a -> RandT StdGen IO Htm.Cell
         createCells _ = do
-            uuid       <- UUID.nextRandom
+            uuid       <- liftIO UUID.nextRandom
             dDendrites <- traverse createDDendrites [1..numOfDDendrites config]
             return Htm.Cell {
                   Htm.cellPredictiveState     = False
@@ -124,9 +124,9 @@ htmInit config stdGen = do
                 , Htm.queuedDistalSynapses    = []
                 , Htm.cellId                  = uuid }
 
-        createDDendrites :: a -> IO Htm.DistalDendrite
+        createDDendrites :: a -> RandT StdGen IO Htm.DistalDendrite
         createDDendrites _ = do
-            uuid           <- UUID.nextRandom
+            uuid           <- liftIO UUID.nextRandom
             distalSynapses <- traverse createDSynapses [1..dSynapses config]
             return Htm.DistalDendrite {
                   Htm.distalSynapses      = distalSynapses
@@ -135,30 +135,33 @@ htmInit config stdGen = do
                 , Htm.dendrtiteLearnState = True
                 , Htm.dendriteId          = uuid }
 
-        createDSynapses :: a -> IO Htm.DistalSynapse
+        createDSynapses :: a -> RandT StdGen IO Htm.DistalSynapse
         createDSynapses _ = do
-            uuid                       <- UUID.nextRandom
+            uuid                       <- liftIO UUID.nextRandom
             originatingCellsDDendrites <- traverse createDDendrites [1..numOfDDendrites config]
+            x            <- getRandomR (permThreshold config - 0.01, permThreshold config + 0.01)
             return Htm.DistalSynapse {
                   Htm.dInput            = Htm.Off
                 , Htm.dSynapseState     = Htm.Potential
                 , Htm.dPrevSynapseState = Htm.Potential
-                , Htm.dPermanence       = getRnd stdGen [] (permThreshold config - 0.01) (permThreshold config + 0.01)
+                , Htm.dPermanence       = x
                 , Htm.dOriginatingCell  = Htm.Cell False False False False False originatingCellsDDendrites [] uuid
                 , Htm.dSyanpseId        = uuid }
                 {-temporary originating cell, replaced in last step of init-}
 
-        createPSynapses :: a -> IO Htm.ProximalSynapse
+        createPSynapses :: a -> RandT StdGen IO Htm.ProximalSynapse
         createPSynapses _ = do
-            uuid <- UUID.nextRandom
+            uuid <- liftIO UUID.nextRandom
+            timeStepIndex <- getRandomR (0, timeStepSize config - 1) -- & (\a -> trace (show a) a)
+            pPermanence <- getRandomR (permThreshold config - 0.01, permThreshold config + 0.01) -- [] 0 14 :: Int) & (\x -> if x == 1 then 0.3 else 0.0)
             return Htm.ProximalSynapse {
                   Htm.pInput        = Htm.Off
                 , Htm.pSynapseState = Htm.Potential
-                , Htm.timeStepIndex = getRnd stdGen [] 0 (timeStepSize config - 1) -- & (\a -> trace (show a) a)
-                , Htm.pPermanence   = getRnd stdGen [] (permThreshold config - 0.01) (permThreshold config + 0.01) -- [] 0 14 :: Int) & (\x -> if x == 1 then 0.3 else 0.0)
+                , Htm.timeStepIndex = timeStepIndex
+                , Htm.pPermanence   = pPermanence
                 , Htm.pSynapseId    = uuid }
 
-        setUpOriginatinCells :: Htm.Region -> IO Htm.Region
+        setUpOriginatinCells :: Htm.Region -> RandT StdGen IO Htm.Region
         setUpOriginatinCells region =
             return region { Htm.columns = region & Htm.columns & map (\column ->
                 column { Htm.cells = column & Htm.cells & (\columnsCells ->
@@ -171,6 +174,6 @@ htmInit config stdGen = do
                                            & concat
                                           -- & filter (flip notElem columnsCells)
                                            & (\allCells ->  {-(trace ("length: " ++ (show $ length allCells ))-} allCells -- )
-                                            !! getRnd stdGen [] 0 (length allCells -1))
+                                            !! 0) --getRnd stdGen [] 0 (length allCells -1))
                                                 -- & (\ind -> trace ("Index: " ++ show ind) ind)
                                                 })})}))})}

@@ -25,14 +25,15 @@ along with this program. If not, see http://www.gnu.org/licenses/agpl-3.0
 module Main where
 
 import           Control.Exception
+import           Control.Monad.Random
 import           Data.Function
 import           Data.List
 import           Data.Maybe
-import qualified Data.Text           as Text
+import qualified Data.Text            as Text
 import           Data.Tuple.Select
 import           Debug.Trace
 import           FlexibleParallelism
-import qualified HtmData             as Htm
+import qualified HtmData              as Htm
 import           HtmInit
 import           SpatialPooler
 import           System.IO
@@ -48,7 +49,7 @@ main = do
     settingsPath      <- getLine
     settings          <- readFile settingsPath
     stdGen            <- newStdGen
-    region            <- settings & lines & setup stdGen & sel1
+    region            <- evalRandT (settings & lines & setup stdGen & sel1) stdGen
     let learning      =  settings & lines & setup stdGen & sel2
     trainingFileH     <- settings & lines & setup stdGen & sel3 & flip openFile ReadMode
     testingFileH      <- settings & lines & setup stdGen & sel4 & flip openFile ReadMode
@@ -116,13 +117,13 @@ processData dataString =
                               "1" -> Htm.On
                               _   -> Htm.Off))
 
-setup :: StdGen -> [String] -> (IO Htm.Region, Bool, String, String, Int)
+setup :: StdGen -> [String] -> (RandT StdGen IO Htm.Region, Bool, String, String, Int)
 setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold
              ,learning,permCompl,boostComp,parallelism,trainingFile
              ,testingFile,learningRepetitions] =
     case learning of
-        "True"  -> (htmInit config stdGen, True,  trainingFile, testingFile, read learningRepetitions)
-        "False" -> (htmInit config stdGen, False, trainingFile, testingFile, read learningRepetitions)
+        "True"  -> (htmInit config, True,  trainingFile, testingFile, read learningRepetitions)
+        "False" -> (htmInit config, False, trainingFile, testingFile, read learningRepetitions)
 
     where
 
@@ -143,7 +144,7 @@ setup stdGen [cols,cells,psyn,dDend,dSyn,timeStepSize,permThreshold
         readComplianceOption "Modified"  = Htm.Modified
 
         readParallelismMode :: String -> ParallelismMode
-        readParallelismMode "None" = None
-        readParallelismMode "Agressive" = Agressive
+        readParallelismMode "None"       = None
+        readParallelismMode "Agressive"  = Agressive
 
         readParallelismMode numOfThreads = Limited (read numOfThreads :: Int)

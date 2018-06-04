@@ -29,6 +29,7 @@ dependencies:
 - deepseq
 - text
 - tuple
+- MonadRandom
 
 library:
   source-dirs: src

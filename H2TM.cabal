@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 864d58dc5b0251f51b4511d545351c31eaad700d0057f811d3942d8b0c755c31
+-- hash: 58b1e136c89658c1fc5e4a0f5b5bcd0dab188cd43b5dba497e2603097851abc2
 
 name:           H2TM
 version:        0.1.0.0
@@ -29,7 +29,6 @@ library
       CycleHistory
       FlexibleParallelism
       HtmData
-      HtmUtils
       Lib
       SpatialPooler
       TemporalPooler
@@ -38,7 +37,8 @@ library
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      MonadRandom
+    , base >=4.7 && <5
     , deepseq
     , monad-par
     , random
@@ -59,6 +59,7 @@ executable H2TM-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       H2TM
+    , MonadRandom
     , base >=4.7 && <5
     , deepseq
     , monad-par
@@ -80,6 +81,7 @@ test-suite H2TM-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       H2TM
+    , MonadRandom
     , base >=4.7 && <5
     , deepseq
     , monad-par
