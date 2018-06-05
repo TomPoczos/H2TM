@@ -26,10 +26,11 @@ module TemporalPooler
 ( temporalPooler
 ) where
 
-import           Data.Maybe
-import           Data.List
-import           FlexibleParallelism
 import           Data.Function
+import           Data.List
+import           Data.Maybe
+import           Data.Ord
+import           FlexibleParallelism
 import qualified HtmData             as Htm
 
 temporalPooler :: Htm.Region -> Htm.Region
@@ -227,38 +228,20 @@ getBestMatchingCell region column time = column
            & (\results -> case results of
                   -- return the cell with the lowest number of distalDendrites
                   -- if we are left with an empty list
-                  [] -> column & Htm.cells & minimumBy numOfDendrites
+                  [] -> minimumBy (comparing $ length . Htm.distalDendrites) (Htm.cells column)
                   -- else return the cell that has the best matching dendrite
                   -- (determined by number of active synapses)
-                  _  -> fst (maximumBy segmentActiveSynapses results) )
-
-    where segmentActiveSynapses :: (Htm.Cell, Htm.DistalDendrite) -> (Htm.Cell, Htm.DistalDendrite) -> Ordering
-          segmentActiveSynapses (_, dendrite1) (_, dendrite2)
-              | getNumOfActiveSynapses time dendrite1 >  getNumOfActiveSynapses time dendrite2 = GT
-              | getNumOfActiveSynapses time dendrite1 <  getNumOfActiveSynapses time dendrite2 = LT
-              | getNumOfActiveSynapses time dendrite1 == getNumOfActiveSynapses time dendrite2 = EQ
-
-          numOfDendrites :: Htm.Cell -> Htm.Cell -> Ordering
-          numOfDendrites cell1 cell2
-              | (cell1 & Htm.distalDendrites & length) >  (cell2 & Htm.distalDendrites & length) = GT
-              | (cell1 & Htm.distalDendrites & length) <  (cell2 & Htm.distalDendrites & length) = LT
-              | (cell1 & Htm.distalDendrites & length) == (cell2 & Htm.distalDendrites & length) = EQ
+                  _  -> fst $ maximumBy (comparing $ getNumOfActiveSynapses time . snd) results)
 
 getBestMatchingSegment :: Htm.Region -> Htm.AcquisitionTime -> Htm.Cell -> Maybe Htm.DistalDendrite
 getBestMatchingSegment region time cell =
-    if (getSegmentWithMostActiveSynapses & getNumOfActiveSynapses time) < Htm.dendriteMinThreshold region
+    if getNumOfActiveSynapses time getSegmentWithMostActiveSynapses < Htm.dendriteMinThreshold region
        then Nothing
        else Just getSegmentWithMostActiveSynapses
 
     where getSegmentWithMostActiveSynapses :: Htm.DistalDendrite
           getSegmentWithMostActiveSynapses =
-              cell & Htm.distalDendrites & maximumBy compareByActiveSynapses
-
-          compareByActiveSynapses :: Htm.DistalDendrite -> Htm.DistalDendrite -> Ordering
-          compareByActiveSynapses dendrite1 dendrite2
-              | getNumOfActiveSynapses time dendrite1 >  getNumOfActiveSynapses time dendrite2 = GT
-              | getNumOfActiveSynapses time dendrite1 <  getNumOfActiveSynapses time dendrite2 = LT
-              | getNumOfActiveSynapses time dendrite1 == getNumOfActiveSynapses time dendrite2 = EQ
+              maximumBy (comparing $ getNumOfActiveSynapses time ) (Htm.distalDendrites cell)
 
 getNumOfActiveSynapses :: Htm.AcquisitionTime -> Htm.DistalDendrite -> Int
 getNumOfActiveSynapses time dendrite = dendrite

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 58b1e136c89658c1fc5e4a0f5b5bcd0dab188cd43b5dba497e2603097851abc2
+-- hash: 5afe51ce42f3364bca1394de7e9d7f3833be5ba02cbdcfaa42c0b7cea4a63b4c
 
 name:           H2TM
 version:        0.1.0.0
@@ -29,7 +29,6 @@ library
       CycleHistory
       FlexibleParallelism
       HtmData
-      Lib
       SpatialPooler
       TemporalPooler
   other-modules:
